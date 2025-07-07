@@ -1,0 +1,22 @@
+services:
+  - type: web
+    name: logawa-discord-bot
+    runtime: node
+    plan: free
+    buildCommand: npm install
+    startCommand: npm start
+    envVars:
+      - key: DISCORD_TOKEN
+        sync: false
+      - key: GUILD_ID
+        sync: false
+      - key: LOG_CHANNEL_ID
+        sync: false
+      - key: IGNORED_CHANNELS
+        sync: false
+      - key: LOG_LEVEL
+        value: info
+      - key: WEBHOOK_URL
+        sync: false
+    healthCheckPath: /health
+    autoDeploy: true 

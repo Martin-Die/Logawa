@@ -1,0 +1,260 @@
+const { Client, GatewayIntentBits, Partials } = require('discord.js');
+const { logger, DiscordLogger } = require('./utils/logger');
+const MessageEvents = require('./events/messageEvents');
+const ModerationEvents = require('./events/moderationEvents');
+const ServerEvents = require('./events/serverEvents');
+const config = require('./config');
+
+// Import ping server for Heroku
+require('./ping.js');
+
+class LogawaLoggerBot {
+    constructor() {
+        this.client = new Client({
+            intents: [
+                GatewayIntentBits.Guilds,
+                GatewayIntentBits.GuildMessages,
+                GatewayIntentBits.GuildMembers,
+                GatewayIntentBits.GuildPresences,
+                GatewayIntentBits.GuildMessageReactions,
+                GatewayIntentBits.GuildEmojisAndStickers,
+                GatewayIntentBits.GuildIntegrations,
+                GatewayIntentBits.GuildWebhooks,
+                GatewayIntentBits.GuildInvites,
+                GatewayIntentBits.GuildVoiceStates,
+                GatewayIntentBits.GuildModeration,
+                GatewayIntentBits.MessageContent
+            ],
+            partials: [
+                Partials.Message,
+                Partials.Channel,
+                Partials.Reaction,
+                Partials.User,
+                Partials.GuildMember
+            ]
+        });
+
+        this.discordLogger = new DiscordLogger(this.client);
+        this.messageEvents = new MessageEvents(this.client, this.discordLogger);
+        this.moderationEvents = new ModerationEvents(this.client, this.discordLogger);
+        this.serverEvents = new ServerEvents(this.client, this.discordLogger);
+    }
+
+    async initialize() {
+        try {
+            // Validate configuration
+            if (!config.token) {
+                throw new Error('Discord token is required. Please set DISCORD_TOKEN in your .env file.');
+            }
+
+            if (!config.guildId) {
+                throw new Error('Guild ID is required. Please set GUILD_ID in your .env file.');
+            }
+
+            if (!config.logChannelId) {
+                throw new Error('Log channel ID is required. Please set LOG_CHANNEL_ID in your .env file.');
+            }
+
+            logger.info('Initializing Logawa Logger Bot...');
+
+            // Set up event handlers
+            this.setupEventHandlers();
+
+            // Login to Discord
+            await this.client.login(config.token);
+
+            // Wait for client to be ready
+            await new Promise((resolve) => {
+                this.client.once('ready', resolve);
+            });
+
+            // Initialize Discord logger
+            const loggerInitialized = await this.discordLogger.initialize();
+            if (!loggerInitialized) {
+                logger.warn('Failed to initialize Discord logger. Bot will continue with file logging only.');
+            }
+
+            // Log startup information
+            await this.logStartupInfo();
+
+            logger.info('Logawa Logger Bot is now online and ready!');
+            logger.info(`Logged in as: ${this.client.user.tag}`);
+            logger.info(`Guild: ${this.client.guilds.cache.get(config.guildId)?.name || 'Unknown'}`);
+            logger.info(`Log Channel: ${this.client.channels.cache.get(config.logChannelId)?.name || 'Unknown'}`);
+
+        } catch (error) {
+            logger.error('Failed to initialize bot:', error);
+            process.exit(1);
+        }
+    }
+
+    setupEventHandlers() {
+        // Register all event handlers
+        this.messageEvents.registerEvents();
+        this.moderationEvents.registerEvents();
+        this.serverEvents.registerEvents();
+
+        // Bot-specific events
+        this.client.on('ready', this.handleReady.bind(this));
+        this.client.on('error', this.handleError.bind(this));
+        this.client.on('warn', this.handleWarn.bind(this));
+        this.client.on('disconnect', this.handleDisconnect.bind(this));
+        this.client.on('reconnecting', this.handleReconnecting.bind(this));
+
+        logger.info('Event handlers registered successfully');
+    }
+
+    async handleReady() {
+        logger.info('Bot is ready!');
+
+        // Set bot status
+        this.client.user.setActivity('Logging Server Activity', { type: 'WATCHING' });
+
+        // Log bot information
+        logger.info(`Bot is in ${this.client.guilds.cache.size} guild(s)`);
+
+        // Check permissions
+        await this.checkPermissions();
+    }
+
+    async checkPermissions() {
+        try {
+            const guild = this.client.guilds.cache.get(config.guildId);
+            if (!guild) {
+                logger.error('Bot is not in the specified guild');
+                return;
+            }
+
+            const botMember = guild.members.cache.get(this.client.user.id);
+            if (!botMember) {
+                logger.error('Bot member not found in guild');
+                return;
+            }
+
+            const requiredPermissions = [
+                'ViewChannel',
+                'ReadMessageHistory',
+                'SendMessages',
+                'ViewAuditLog'
+            ];
+
+            const missingPermissions = requiredPermissions.filter(permission =>
+                !botMember.permissions.has(permission)
+            );
+
+            if (missingPermissions.length > 0) {
+                logger.warn(`Missing permissions: ${missingPermissions.join(', ')}`);
+            } else {
+                logger.info('All required permissions are present');
+            }
+
+            // Check log channel permissions
+            const logChannel = this.client.channels.cache.get(config.logChannelId);
+            if (logChannel) {
+                const channelPermissions = logChannel.permissionsFor(this.client.user);
+                if (!channelPermissions.has('SendMessages')) {
+                    logger.error('Bot cannot send messages to the log channel');
+                } else {
+                    logger.info('Log channel permissions are correct');
+                }
+            }
+
+        } catch (error) {
+            logger.error('Error checking permissions:', error);
+        }
+    }
+
+    async logStartupInfo() {
+        try {
+            const embed = this.discordLogger.createEmbed(
+                '🟢 Bot Started',
+                'Logawa Logger Bot is now online and monitoring server activity.',
+                0x00ff00,
+                [
+                    { name: 'Bot Version', value: '1.0.0', inline: true },
+                    { name: 'Node.js Version', value: process.version, inline: true },
+                    { name: 'Uptime', value: 'Just started', inline: true },
+                    { name: 'Ignored Channels', value: config.ignoredChannels.length.toString(), inline: true }
+                ]
+            );
+
+            await this.discordLogger.sendLog(embed);
+        } catch (error) {
+            logger.error('Error sending startup log:', error);
+        }
+    }
+
+    handleError(error) {
+        logger.error('Discord client error:', error);
+    }
+
+    handleWarn(warning) {
+        logger.warn('Discord client warning:', warning);
+    }
+
+    handleDisconnect() {
+        logger.warn('Bot disconnected from Discord');
+    }
+
+    handleReconnecting() {
+        logger.info('Bot is reconnecting to Discord...');
+    }
+
+    // Graceful shutdown
+    async shutdown() {
+        logger.info('Shutting down bot...');
+
+        try {
+            const embed = this.discordLogger.createEmbed(
+                '🔴 Bot Stopped',
+                'Logawa Logger Bot is shutting down.',
+                0xff0000,
+                [
+                    { name: 'Shutdown Time', value: new Date().toISOString(), inline: true }
+                ]
+            );
+
+            await this.discordLogger.sendLog(embed);
+
+            // Wait a bit for the message to be sent
+            await new Promise(resolve => setTimeout(resolve, 1000));
+
+            this.client.destroy();
+            logger.info('Bot shutdown complete');
+            process.exit(0);
+        } catch (error) {
+            logger.error('Error during shutdown:', error);
+            process.exit(1);
+        }
+    }
+}
+
+// Create and start the bot
+const bot = new LogawaLoggerBot();
+
+// Handle process termination
+process.on('SIGINT', () => {
+    logger.info('Received SIGINT, shutting down...');
+    bot.shutdown();
+});
+
+process.on('SIGTERM', () => {
+    logger.info('Received SIGTERM, shutting down...');
+    bot.shutdown();
+});
+
+process.on('uncaughtException', (error) => {
+    logger.error('Uncaught Exception:', error);
+    bot.shutdown();
+});
+
+process.on('unhandledRejection', (reason, promise) => {
+    logger.error('Unhandled Rejection at:', promise, 'reason:', reason);
+    bot.shutdown();
+});
+
+// Start the bot
+bot.initialize().catch(error => {
+    logger.error('Failed to start bot:', error);
+    process.exit(1);
+}); 
