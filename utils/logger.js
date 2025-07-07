@@ -186,6 +186,21 @@ logger.add(new FileLoggingTransport({
     flushInterval: 30000
 }));
 
+// Initialize cloud loggers
+const GitHubLogger = require('./github-logger');
+const GoogleDriveLogger = require('./drive-logger');
+
+const githubLogger = new GitHubLogger();
+const driveLogger = new GoogleDriveLogger();
+
+// Initialize cloud loggers
+githubLogger.initialize();
+driveLogger.initialize();
+
+// Export cloud loggers for external use
+logger.githubLogger = githubLogger;
+logger.driveLogger = driveLogger;
+
 // Discord logging utility
 class DiscordLogger {
     constructor(client) {
