@@ -157,6 +157,64 @@ npm start
 
 ## 📊 Logging Access
 
+### 📁 Logs TXT Locaux
+
+Le bot crée automatiquement des fichiers de logs en format TXT :
+
+```
+logs/
+├── all.log              # Tous les logs (tous niveaux)
+├── error.log            # Logs d'erreurs uniquement
+├── 2024-01-15.log       # Logs du jour (format YYYY-MM-DD)
+├── backup/              # Sauvegardes manuelles
+└── archive/             # Sauvegardes compressées
+```
+
+### 🔧 Gestion des Logs
+
+```bash
+# Lister les fichiers de logs
+node scripts/log-manager.js list
+
+# Analyser un fichier de log
+node scripts/log-manager.js analyze error.log
+
+# Rechercher dans les logs
+node scripts/log-manager.js search "ERROR"
+
+# Surveiller les logs en temps réel
+node scripts/log-manager.js watch
+
+# Créer une sauvegarde
+node scripts/log-manager.js backup
+
+# Générer un rapport complet
+node scripts/log-manager.js report
+```
+
+### 🔄 Sauvegarde Automatique
+
+```bash
+# Démarrer la sauvegarde automatique
+node scripts/auto-backup.js start
+
+# Créer une sauvegarde manuelle
+node scripts/auto-backup.js backup
+
+# Voir le rapport de sauvegarde
+node scripts/auto-backup.js report
+```
+
+**Variables d'environnement pour la sauvegarde :**
+```env
+AUTO_BACKUP_ENABLED=true
+BACKUP_INTERVAL_HOURS=24
+BACKUP_RETENTION_DAYS=30
+BACKUP_COMPRESS=true
+BACKUP_NOTIFY_DISCORD=true
+BACKUP_WEBHOOK_URL=url_webhook_discord
+```
+
 ### Render Dashboard
 - Go to your service in Render dashboard
 - Click on "Logs" tab

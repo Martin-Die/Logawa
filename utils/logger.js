@@ -71,6 +71,66 @@ class WebhookTransport extends winston.Transport {
     }
 }
 
+// File logging transport for external storage
+class FileLoggingTransport extends winston.Transport {
+    constructor(opts) {
+        super(opts);
+        this.logBuffer = [];
+        this.maxBufferSize = opts.maxBufferSize || 100;
+        this.flushInterval = opts.flushInterval || 30000; // 30 seconds
+        this.setupFlushInterval();
+    }
+
+    setupFlushInterval() {
+        setInterval(() => {
+            this.flushLogs();
+        }, this.flushInterval);
+    }
+
+    async log(info, callback) {
+        const logEntry = {
+            timestamp: new Date().toISOString(),
+            level: info.level,
+            message: info.message,
+            meta: info.meta || {}
+        };
+
+        this.logBuffer.push(logEntry);
+
+        if (this.logBuffer.length >= this.maxBufferSize) {
+            await this.flushLogs();
+        }
+
+        callback();
+    }
+
+    async flushLogs() {
+        if (this.logBuffer.length === 0) return;
+
+        try {
+            // Send logs to external service or save locally
+            const logs = this.logBuffer.map(log => 
+                `[${log.timestamp}] [${log.level.toUpperCase()}] ${log.message} ${JSON.stringify(log.meta)}`
+            ).join('\n');
+
+            // Option 1: Save to local file (if possible)
+            const logFile = path.join(config.logFile.directory, `${moment().format('YYYY-MM-DD')}.log`);
+            fs.appendFileSync(logFile, logs + '\n');
+
+            // Option 2: Send to external service (if configured)
+            if (config.externalLogService) {
+                // You can implement external service logging here
+                // For example: Google Drive, Dropbox, AWS S3, etc.
+                console.log('Logs ready for external service:', logs.length, 'entries');
+            }
+
+            this.logBuffer = [];
+        } catch (error) {
+            console.error('Failed to flush logs:', error);
+        }
+    }
+}
+
 // Create Winston logger
 const logger = winston.createLogger({
     level: config.logLevel,
@@ -118,6 +178,13 @@ if (config.webhookUrl) {
         level: 'info'
     }));
 }
+
+// Add file logging transport for external storage
+logger.add(new FileLoggingTransport({
+    level: 'info',
+    maxBufferSize: 50,
+    flushInterval: 30000
+}));
 
 // Discord logging utility
 class DiscordLogger {

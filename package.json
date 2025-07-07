@@ -4,7 +4,19 @@
   "description": "A comprehensive Discord logging bot that tracks messages, moderation actions, and server events",
   "main": "index.js",
   "scripts": {
-    "start": "node index.js"
+    "start": "node index.js",
+    "dev": "nodemon index.js",
+    "test": "echo \"Error: no test specified\" && exit 1",
+    "logs:list": "node scripts/log-manager.js list",
+    "logs:analyze": "node scripts/log-manager.js analyze",
+    "logs:search": "node scripts/log-manager.js search",
+    "logs:watch": "node scripts/log-manager.js watch",
+    "logs:backup": "node scripts/log-manager.js backup",
+    "logs:report": "node scripts/log-manager.js report",
+    "backup:start": "node scripts/auto-backup.js start",
+    "backup:manual": "node scripts/auto-backup.js backup",
+    "backup:report": "node scripts/auto-backup.js report",
+    "backup:config": "node scripts/auto-backup.js config"
   },
   "keywords": [
     "discord",
