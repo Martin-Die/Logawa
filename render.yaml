@@ -18,5 +18,20 @@ services:
         value: info
       - key: WEBHOOK_URL
         sync: false
+      - key: PING_URL
+        value: https://logawa-discord-bot.onrender.com/ping
+      - key: NODE_ENV
+        value: production
+      - key: RENDER_EXTERNAL_URL
+        value: https://logawa-discord-bot.onrender.com
     healthCheckPath: /health
-    autoDeploy: true 
+    autoDeploy: true
+    # Optimisations pour éviter les arrêts
+    buildFilter:
+      paths:
+        - package.json
+        - package-lock.json
+    # Configuration pour maintenir le service actif
+    envVars:
+      - key: RENDER_KEEP_ALIVE
+        value: true 

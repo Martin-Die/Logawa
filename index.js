@@ -8,6 +8,9 @@ const config = require('./config');
 // Import ping server for Heroku
 require('./ping.js');
 
+// Import external ping service for Render
+require('./external-ping.js');
+
 class LogawaLoggerBot {
     constructor() {
         this.client = new Client({
