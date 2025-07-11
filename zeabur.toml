@@ -1,0 +1,12 @@
+[build]
+builder = "DOCKERFILE"
+dockerfile = "Dockerfile"
+
+[deploy]
+startCommand = "npm start"
+healthCheckPath = "/health"
+healthCheckInterval = 30
+port = 3000
+
+[env]
+NODE_ENV = "production" 
