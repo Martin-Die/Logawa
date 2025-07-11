@@ -2,36 +2,74 @@
 
 ## 📁 **Structure des Fichiers de Logs**
 
-Le bot Logawa crée automatiquement plusieurs types de fichiers de logs en format TXT :
+Le bot Logawa crée automatiquement plusieurs types de fichiers de logs en format TXT, organisés par sous-dossiers :
 
 ```
 logs/
-├── all.log              # Tous les logs (tous niveaux)
-├── error.log            # Logs d'erreurs uniquement
-├── 2024-01-15.log       # Logs du jour (format YYYY-MM-DD)
-├── 2024-01-14.log       # Logs du jour précédent
-├── 2024-01-13.log       # etc...
-└── archive/             # Anciens logs archivés
+├── error.log                  # Logs d'erreurs globales
+├── messages/                  # Logs des messages Discord
+│   ├── 2024-01-15.log        # Messages du jour
+│   ├── 2024-01-14.log        # Messages du jour précédent
+│   └── ...
+├── moderation/                # Logs des actions de modération
+│   ├── 2024-01-15.log        # Modération du jour
+│   ├── 2024-01-14.log        # Modération du jour précédent
+│   └── ...
+├── status/                    # Logs de statut du bot
+│   ├── 2024-01-15.log        # Statut du jour
+│   ├── 2024-01-14.log        # Statut du jour précédent
+│   └── ...
+├── forbiddenWords/            # Logs des mots interdits détectés
+│   ├── 2024-01-15.log        # Mots interdits du jour
+│   ├── 2024-01-14.log        # Mots interdits du jour précédent
+│   └── ...
+├── errors/                    # Logs d'erreurs détaillés
+│   ├── 2024-01-15.log        # Erreurs du jour
+│   ├── 2024-01-14.log        # Erreurs du jour précédent
+│   └── ...
+└── archive/                   # Anciens logs archivés
 ```
 
 ---
 
 ## 🗂️ **Types de Fichiers de Logs**
 
-### **1. `all.log`**
-- **Contenu** : Tous les logs (info, warn, error, debug)
-- **Rotation** : 10MB max, garde 7 fichiers
-- **Format** : `[2024-01-15 14:30:25] [INFO] Bot started successfully`
-
-### **2. `error.log`**
+### **1. `error.log` (Global)**
 - **Contenu** : Uniquement les erreurs
 - **Rotation** : 10MB max, garde 7 fichiers
 - **Format** : `[2024-01-15 14:30:25] [ERROR] Failed to send log to Discord`
 
-### **3. `YYYY-MM-DD.log`**
-- **Contenu** : Logs du jour spécifique
+### **3. Sous-dossiers par type**
+
+#### **📁 `messages/`**
+- **Contenu** : Logs des messages Discord (envoi, modification, suppression)
+- **Fichiers** : `YYYY-MM-DD.log` (un par jour)
 - **Rotation** : 10MB max, garde 30 jours
-- **Format** : `[2024-01-15 14:30:25] [INFO] Message logged: User#1234 sent a message`
+- **Exemple** : `[2024-01-15 14:30:25] [INFO] Message sent: User#1234 in #general`
+
+#### **📁 `moderation/`**
+- **Contenu** : Logs des actions de modération (kick, ban, timeout, rôles)
+- **Fichiers** : `YYYY-MM-DD.log` (un par jour)
+- **Rotation** : 10MB max, garde 30 jours
+- **Exemple** : `[2024-01-15 14:30:25] [INFO] Moderation action: kick on User#1234 by Moderator#5678`
+
+#### **📁 `status/`**
+- **Contenu** : Logs de statut du bot (démarrage, arrêt, erreurs système)
+- **Fichiers** : `YYYY-MM-DD.log` (un par jour)
+- **Rotation** : 10MB max, garde 30 jours
+- **Exemple** : `[2024-01-15 14:30:25] [INFO] Bot status: startup`
+
+#### **📁 `forbiddenWords/`**
+- **Contenu** : Logs des mots interdits détectés
+- **Fichiers** : `YYYY-MM-DD.log` (un par jour)
+- **Rotation** : 10MB max, garde 30 jours
+- **Exemple** : `[2024-01-15 14:30:25] [INFO] Forbidden word detected: "spam" by User#1234`
+
+#### **📁 `errors/`**
+- **Contenu** : Logs d'erreurs détaillés
+- **Fichiers** : `YYYY-MM-DD.log` (un par jour)
+- **Rotation** : 10MB max, garde 30 jours
+- **Exemple** : `[2024-01-15 14:30:25] [ERROR] Failed to send log to Discord channel`
 
 ---
 
@@ -122,41 +160,43 @@ logFile: {
 
 ### **Voir les Logs en Temps Réel**
 ```bash
-# Tous les logs
-tail -f logs/all.log
-
 # Erreurs uniquement
 tail -f logs/error.log
 
-# Logs du jour
-tail -f logs/$(date +%Y-%m-%d).log
+# Logs du jour par type
+tail -f logs/messages/$(date +%Y-%m-%d).log
+tail -f logs/moderation/$(date +%Y-%m-%d).log
+tail -f logs/status/$(date +%Y-%m-%d).log
 ```
 
 ### **Rechercher dans les Logs**
 ```bash
-# Chercher un utilisateur
-grep "User#1234" logs/all.log
+# Chercher un utilisateur dans les messages
+grep "User#1234" logs/messages/$(date +%Y-%m-%d).log
 
 # Chercher les erreurs
-grep "ERROR" logs/all.log
+grep "ERROR" logs/error.log
 
 # Chercher les actions de modération
-grep "Moderation action" logs/all.log
+grep "Moderation action" logs/moderation/$(date +%Y-%m-%d).log
 
 # Chercher les messages d'un canal
-grep "#general" logs/all.log
+grep "#general" logs/messages/$(date +%Y-%m-%d).log
 ```
 
 ### **Statistiques des Logs**
 ```bash
-# Nombre de lignes par jour
-wc -l logs/*.log
+# Nombre de lignes par type aujourd'hui
+wc -l logs/messages/$(date +%Y-%m-%d).log
+wc -l logs/moderation/$(date +%Y-%m-%d).log
+wc -l logs/status/$(date +%Y-%m-%d).log
 
 # Taille des fichiers
-du -h logs/*.log
+du -h logs/error.log
+du -h logs/*/*.log
 
-# Dernières 100 lignes
-tail -100 logs/all.log
+# Dernières 100 lignes d'erreurs
+tail -100 logs/error.log
 ```
 
 ---
@@ -174,14 +214,20 @@ Le bot utilise Winston pour la rotation automatique :
 ### **Exemple de Rotation**
 ```
 logs/
-├── all.log              # Fichier actuel
-├── all.log.1            # Fichier précédent
-├── all.log.2            # Fichier plus ancien
 ├── error.log            # Erreurs actuelles
 ├── error.log.1          # Erreurs précédentes
-├── 2024-01-15.log       # Aujourd'hui
-├── 2024-01-14.log       # Hier
-└── 2024-01-13.log       # Avant-hier
+├── messages/
+│   ├── 2024-01-15.log   # Messages aujourd'hui
+│   ├── 2024-01-14.log   # Messages hier
+│   └── 2024-01-13.log   # Messages avant-hier
+├── moderation/
+│   ├── 2024-01-15.log   # Modération aujourd'hui
+│   ├── 2024-01-14.log   # Modération hier
+│   └── 2024-01-13.log   # Modération avant-hier
+└── status/
+    ├── 2024-01-15.log   # Statut aujourd'hui
+    ├── 2024-01-14.log   # Statut hier
+    └── 2024-01-13.log   # Statut avant-hier
 ```
 
 ---
@@ -292,7 +338,7 @@ if [ $TOTAL_SIZE -gt $ALERT_SIZE ]; then
 fi
 
 # Vérifier les erreurs récentes
-ERROR_COUNT=$(grep -c "ERROR" $LOG_DIR/all.log | tail -100)
+ERROR_COUNT=$(grep -c "ERROR" $LOG_DIR/error.log | tail -100)
 
 if [ $ERROR_COUNT -gt 10 ]; then
     echo "ALERT: High error count: $ERROR_COUNT errors in last 100 lines"
@@ -317,4 +363,72 @@ fi
 ### **Sécurité**
 1. **Permissions** restrictives sur le dossier logs
 2. **Chiffrement** des logs sensibles
-3. **Accès limité** aux fichiers de logs 
+3. **Accès limité** aux fichiers de logs
+
+---
+
+## 🔍 **Gestion par Type de Log**
+
+### **Recherche dans un type spécifique**
+```bash
+# Rechercher dans les logs de modération
+grep "kick" logs/moderation/$(date +%Y-%m-%d).log
+
+# Rechercher dans les logs de messages
+grep "User#1234" logs/messages/$(date +%Y-%m-%d).log
+
+# Rechercher dans les logs de mots interdits
+grep "spam" logs/forbiddenWords/$(date +%Y-%m-%d).log
+
+# Rechercher dans les logs de statut
+grep "startup" logs/status/$(date +%Y-%m-%d).log
+
+# Rechercher dans les logs d'erreurs
+grep "ERROR" logs/errors/$(date +%Y-%m-%d).log
+```
+
+### **Surveillance par type en temps réel**
+```bash
+# Surveiller les logs de modération
+tail -f logs/moderation/$(date +%Y-%m-%d).log
+
+# Surveiller les logs de messages
+tail -f logs/messages/$(date +%Y-%m-%d).log
+
+# Surveiller les logs d'erreurs
+tail -f logs/errors/$(date +%Y-%m-%d).log
+
+# Surveiller les logs de statut
+tail -f logs/status/$(date +%Y-%m-%d).log
+```
+
+### **Statistiques par type**
+```bash
+# Nombre d'actions de modération aujourd'hui
+wc -l logs/moderation/$(date +%Y-%m-%d).log
+
+# Nombre de messages aujourd'hui
+wc -l logs/messages/$(date +%Y-%m-%d).log
+
+# Nombre de mots interdits détectés
+wc -l logs/forbiddenWords/$(date +%Y-%m-%d).log
+
+# Nombre d'erreurs aujourd'hui
+wc -l logs/errors/$(date +%Y-%m-%d).log
+```
+
+### **Analyse comparative**
+```bash
+# Comparer l'activité entre hier et aujourd'hui
+echo "=== Messages ==="
+wc -l logs/messages/$(date -d "yesterday" +%Y-%m-%d).log
+wc -l logs/messages/$(date +%Y-%m-%d).log
+
+echo "=== Modération ==="
+wc -l logs/moderation/$(date -d "yesterday" +%Y-%m-%d).log
+wc -l logs/moderation/$(date +%Y-%m-%d).log
+
+echo "=== Mots interdits ==="
+wc -l logs/forbiddenWords/$(date -d "yesterday" +%Y-%m-%d).log
+wc -l logs/forbiddenWords/$(date +%Y-%m-%d).log
+``` 

@@ -5,7 +5,7 @@ const path = require('path');
 // Fonction pour lire les mots interdits depuis un fichier
 function loadForbiddenWords() {
     try {
-        const forbiddenWordsPath = path.join(__dirname, 'forbidden-words.txt');
+        const forbiddenWordsPath = path.join(__dirname, 'forbidden_words.txt');
         if (fs.existsSync(forbiddenWordsPath)) {
             const content = fs.readFileSync(forbiddenWordsPath, 'utf8');
             return content

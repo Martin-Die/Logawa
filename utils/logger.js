@@ -108,20 +108,48 @@ class FileLoggingTransport extends winston.Transport {
         if (this.logBuffer.length === 0) return;
 
         try {
-            // Send logs to external service or save locally
-            const logs = this.logBuffer.map(log => 
-                `[${log.timestamp}] [${log.level.toUpperCase()}] ${log.message} ${JSON.stringify(log.meta)}`
-            ).join('\n');
+            // Group logs by type based on message content
+            const logsByType = {
+                messages: [],
+                moderation: [],
+                status: [],
+                forbiddenWords: [],
+                errors: []
+            };
 
-            // Option 1: Save to local file (if possible)
-            const logFile = path.join(config.logFile.directory, `${moment().format('YYYY-MM-DD')}.log`);
-            fs.appendFileSync(logFile, logs + '\n');
+            this.logBuffer.forEach(log => {
+                const logEntry = `[${log.timestamp}] [${log.level.toUpperCase()}] ${log.message} ${JSON.stringify(log.meta)}`;
+                
+                // Determine log type based on message content
+                if (log.level === 'error') {
+                    logsByType.errors.push(logEntry);
+                } else if (log.message.includes('Message') || log.message.includes('message')) {
+                    logsByType.messages.push(logEntry);
+                } else if (log.message.includes('Moderation') || log.message.includes('kick') || log.message.includes('ban') || log.message.includes('timeout')) {
+                    logsByType.moderation.push(logEntry);
+                } else if (log.message.includes('Forbidden word') || log.message.includes('forbidden')) {
+                    logsByType.forbiddenWords.push(logEntry);
+                } else if (log.message.includes('Bot status') || log.message.includes('status')) {
+                    logsByType.status.push(logEntry);
+                } else {
+                    // Default to status for other logs
+                    logsByType.status.push(logEntry);
+                }
+            });
+
+            // Write logs to appropriate files
+            Object.entries(logsByType).forEach(([type, logs]) => {
+                if (logs.length > 0) {
+                    const logFile = path.join(config.logFile.directory, type, `${moment().format('YYYY-MM-DD')}.log`);
+                    fs.appendFileSync(logFile, logs.join('\n') + '\n');
+                }
+            });
 
             // Option 2: Send to external service (if configured)
             if (config.externalLogService) {
                 // You can implement external service logging here
                 // For example: Google Drive, Dropbox, AWS S3, etc.
-                console.log('Logs ready for external service:', logs.length, 'entries');
+                console.log('Logs ready for external service:', this.logBuffer.length, 'entries');
             }
 
             this.logBuffer = [];
@@ -130,6 +158,15 @@ class FileLoggingTransport extends winston.Transport {
         }
     }
 }
+
+// Create subdirectories for different log types
+const logTypes = ['messages', 'moderation', 'status', 'forbiddenWords', 'errors'];
+logTypes.forEach(type => {
+    const typeDir = path.join(config.logFile.directory, type);
+    if (!fs.existsSync(typeDir)) {
+        fs.mkdirSync(typeDir, { recursive: true });
+    }
+});
 
 // Create Winston logger
 const logger = winston.createLogger({
@@ -144,15 +181,7 @@ const logger = winston.createLogger({
             )
         }),
 
-        // File transport for all logs
-        new winston.transports.File({
-            filename: path.join(config.logFile.directory, 'all.log'),
-            maxsize: 10 * 1024 * 1024, // 10MB
-            maxFiles: 7,
-            tailable: true
-        }),
-
-        // Separate file for errors
+        // Separate file for errors (global)
         new winston.transports.File({
             filename: path.join(config.logFile.directory, 'error.log'),
             level: 'error',
@@ -161,12 +190,45 @@ const logger = winston.createLogger({
             tailable: true
         }),
 
-        // Daily log files
+        // Daily log files by type
         new winston.transports.File({
-            filename: path.join(config.logFile.directory, `${moment().format('YYYY-MM-DD')}.log`),
+            filename: path.join(config.logFile.directory, 'messages', `${moment().format('YYYY-MM-DD')}.log`),
             maxsize: 10 * 1024 * 1024,
             maxFiles: 30,
-            tailable: true
+            tailable: true,
+            level: 'info'
+        }),
+
+        new winston.transports.File({
+            filename: path.join(config.logFile.directory, 'moderation', `${moment().format('YYYY-MM-DD')}.log`),
+            maxsize: 10 * 1024 * 1024,
+            maxFiles: 30,
+            tailable: true,
+            level: 'info'
+        }),
+
+        new winston.transports.File({
+            filename: path.join(config.logFile.directory, 'status', `${moment().format('YYYY-MM-DD')}.log`),
+            maxsize: 10 * 1024 * 1024,
+            maxFiles: 30,
+            tailable: true,
+            level: 'info'
+        }),
+
+        new winston.transports.File({
+            filename: path.join(config.logFile.directory, 'forbiddenWords', `${moment().format('YYYY-MM-DD')}.log`),
+            maxsize: 10 * 1024 * 1024,
+            maxFiles: 30,
+            tailable: true,
+            level: 'info'
+        }),
+
+        new winston.transports.File({
+            filename: path.join(config.logFile.directory, 'errors', `${moment().format('YYYY-MM-DD')}.log`),
+            maxsize: 10 * 1024 * 1024,
+            maxFiles: 30,
+            tailable: true,
+            level: 'error'
         })
     ]
 });
@@ -213,6 +275,18 @@ class DiscordLogger {
         };
     }
 
+    // Helper method to log to specific file type
+    logToFile(type, message, meta = {}) {
+        const logEntry = `[${moment().format('YYYY-MM-DD HH:mm:ss')}] [INFO] ${message} ${JSON.stringify(meta)}`;
+        const logFile = path.join(config.logFile.directory, type, `${moment().format('YYYY-MM-DD')}.log`);
+        
+        try {
+            fs.appendFileSync(logFile, logEntry + '\n');
+        } catch (error) {
+            console.error(`Failed to write to log file ${logFile}:`, error);
+        }
+    }
+
     async initialize() {
         try {
             // Initialize all log channels
@@ -255,10 +329,31 @@ class DiscordLogger {
             if (channel) {
                 await channel.send({ embeds: [embed] });
             } else {
-                // Fallback to messages channel if specified channel is not available
-                const fallbackChannel = this.logChannels.messages || Object.values(this.logChannels).find(ch => ch !== null);
+                // Smart fallback based on channel type
+                let fallbackChannel = null;
+                
+                if (channelType === 'moderation') {
+                    // For moderation logs, try status channel first, then messages
+                    fallbackChannel = this.logChannels.status || this.logChannels.messages;
+                } else if (channelType === 'forbiddenWords') {
+                    // For forbidden words, try messages channel first, then status
+                    fallbackChannel = this.logChannels.messages || this.logChannels.status;
+                } else if (channelType === 'status') {
+                    // For status logs, try messages channel
+                    fallbackChannel = this.logChannels.messages;
+                } else {
+                    // For messages, try status channel
+                    fallbackChannel = this.logChannels.status;
+                }
+                
+                // Final fallback to any available channel
+                if (!fallbackChannel) {
+                    fallbackChannel = Object.values(this.logChannels).find(ch => ch !== null);
+                }
+                
                 if (fallbackChannel) {
                     await fallbackChannel.send({ embeds: [embed] });
+                    logger.warn(`Log sent to fallback channel '${fallbackChannel.name}' instead of '${channelType}'`);
                 }
             }
         } catch (error) {
@@ -298,6 +393,16 @@ class DiscordLogger {
         );
 
         await this.sendLog(embed, 'messages');
+        
+        // Log to specific file
+        this.logToFile('messages', `Message ${action}: ${message.author.tag} in #${message.channel.name}`, {
+            messageId: message.id,
+            authorId: message.author.id,
+            channelId: message.channel.id,
+            content: message.content?.substring(0, 100) + (message.content?.length > 100 ? '...' : ''),
+            action: action
+        });
+        
         logger.info(`Message ${action}: ${message.author.tag} in #${message.channel.name}`, {
             messageId: message.id,
             authorId: message.author.id,
@@ -333,6 +438,16 @@ class DiscordLogger {
         }
 
         await this.sendLog(embed, 'moderation');
+        
+        // Log to specific file
+        this.logToFile('moderation', `Moderation action: ${action} on ${user.tag} by ${moderator.tag}`, {
+            userId: user.id,
+            moderatorId: moderator.id,
+            action: action,
+            reason: reason,
+            duration: duration
+        });
+        
         logger.info(`Moderation action: ${action} on ${user.tag} by ${moderator.tag}`, {
             userId: user.id,
             moderatorId: moderator.id,
@@ -426,6 +541,10 @@ class DiscordLogger {
         });
 
         await this.sendLog(embed, 'status');
+        
+        // Log to specific file
+        this.logToFile('status', `Bot status: ${status}`, details);
+        
         logger.info(`Bot status: ${status}`, details);
     }
 
@@ -444,6 +563,17 @@ class DiscordLogger {
         );
 
         await this.sendLog(embed, 'forbiddenWords');
+        
+        // Log to specific file
+        this.logToFile('forbiddenWords', `Forbidden word ${action}: "${forbiddenWord}" by ${message.author.tag} in #${message.channel.name}`, {
+            messageId: message.id,
+            authorId: message.author.id,
+            channelId: message.channel.id,
+            forbiddenWord: forbiddenWord,
+            content: message.content?.substring(0, 100) + (message.content?.length > 100 ? '...' : ''),
+            action: action
+        });
+        
         logger.info(`Forbidden word ${action}: "${forbiddenWord}" by ${message.author.tag} in #${message.channel.name}`, {
             messageId: message.id,
             authorId: message.author.id,

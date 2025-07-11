@@ -66,7 +66,7 @@ Assurez-vous que le bot a les permissions suivantes sur chaque canal :
 
 ## Configuration des Mots Interdits
 
-Les mots interdits sont maintenant gérés via un fichier texte `forbidden-words.txt` à la racine du projet.
+Les mots interdits sont maintenant gérés via un fichier texte `forbidden_words.txt` à la racine du projet.
 
 ### Format du Fichier
 
@@ -87,7 +87,7 @@ mot3
 
 ### Modification de la Liste
 
-La liste des mots interdits se modifie en éditant directement le fichier `forbidden-words.txt` avec n'importe quel éditeur de texte.
+La liste des mots interdits se modifie en éditant directement le fichier `forbidden_words.txt` avec n'importe quel éditeur de texte.
 
 **Format :** Un mot par ligne, sans commentaires ni formatage spécial.
 
@@ -103,7 +103,7 @@ FORBIDDEN_WORDS_LOG_CHANNEL_ID=1234567890123456791
 MODERATION_LOG_CHANNEL_ID=1234567890123456792
 ```
 
-**Note :** Les mots interdits sont maintenant gérés via le fichier `forbidden-words.txt`
+**Note :** Les mots interdits sont maintenant gérés via le fichier `forbidden_words.txt`
 
 ### Configuration Minimale
 ```env
@@ -142,7 +142,7 @@ Chaque type de log contient des informations spécifiques :
    - Le bot utilise le canal de fallback si un canal spécifique n'est pas trouvé
 
 3. **Mots interdits non détectés**
-   - Vérifiez le fichier `forbidden-words.txt`
+   - Vérifiez le fichier `forbidden_words.txt`
    - Assurez-vous que les mots sont sur des lignes séparées
    - Le fichier ne doit contenir que des mots, sans commentaires
    - Redémarrez le bot après modification du fichier

@@ -94,7 +94,7 @@ A comprehensive, secure, and reliable Discord bot designed to log all server act
 5. **Configure forbidden words (optional)**
    ```bash
    # Copy the example file
-   cp forbidden-words.example.txt forbidden-words.txt
+   cp forbidden-words.example.txt forbidden_words.txt
    
    # Edit the file to add your forbidden words (one word per line)
    # Use any text editor to modify the list
@@ -250,18 +250,18 @@ BACKUP_WEBHOOK_URL=url_webhook_discord
 
 ### 📝 Gestion des Mots Interdits
 
-La liste des mots interdits se modifie en éditant directement le fichier `forbidden-words.txt` :
+La liste des mots interdits se modifie en éditant directement le fichier `forbidden_words.txt` :
 
 ```bash
 # Copier le fichier d'exemple
-cp forbidden-words.example.txt forbidden-words.txt
-
-# Éditer avec n'importe quel éditeur de texte
-nano forbidden-words.txt
-# ou
-notepad forbidden-words.txt
-# ou
-code forbidden-words.txt
+   cp forbidden-words.example.txt forbidden_words.txt
+   
+   # Éditer avec n'importe quel éditeur de texte
+   nano forbidden_words.txt
+   # ou
+   notepad forbidden_words.txt
+   # ou
+   code forbidden_words.txt
 ```
 
 **Format :** Un mot par ligne, sans commentaires.
