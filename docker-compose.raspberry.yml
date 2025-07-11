@@ -19,9 +19,7 @@ services:
       - ./logs:/app/logs
       # Montage optionnel pour les sauvegardes
       - ./backups:/app/backups
-    ports:
-      # Port pour les webhooks externes (optionnel)
-      - "3000:3000"
+
     networks:
       - liko-network
     healthcheck:

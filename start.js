@@ -4,11 +4,6 @@ const { spawn } = require('child_process');
 const { logger } = require('./utils/logger');
 
 console.log('🚀 Starting LIKO Discord Bot...');
-console.log('📋 Environment check:');
-console.log('- NODE_ENV:', process.env.NODE_ENV);
-console.log('- DISCORD_TOKEN:', process.env.DISCORD_TOKEN ? '✅ Set' : '❌ Missing');
-console.log('- GUILD_ID:', process.env.GUILD_ID ? '✅ Set' : '❌ Missing');
-console.log('- LOG_CHANNEL_ID:', process.env.LOG_CHANNEL_ID ? '✅ Set' : '❌ Missing');
 
 // Vérifier les variables critiques
 if (!process.env.DISCORD_TOKEN) {
@@ -21,12 +16,18 @@ if (!process.env.GUILD_ID) {
     process.exit(1);
 }
 
-if (!process.env.LOG_CHANNEL_ID) {
-    console.error('💥 LOG_CHANNEL_ID is required!');
+// Vérifier qu'au moins un canal de log est configuré
+const hasLogChannels = process.env.STATUS_LOG_CHANNEL_ID || 
+                      process.env.MESSAGES_LOG_CHANNEL_ID || 
+                      process.env.FORBIDDEN_WORDS_LOG_CHANNEL_ID || 
+                      process.env.MODERATION_LOG_CHANNEL_ID;
+
+if (!hasLogChannels) {
+    console.error('💥 At least one log channel ID is required! (STATUS_LOG_CHANNEL_ID, MESSAGES_LOG_CHANNEL_ID, FORBIDDEN_WORDS_LOG_CHANNEL_ID, or MODERATION_LOG_CHANNEL_ID)');
     process.exit(1);
 }
 
-console.log('✅ All required environment variables are set');
+
 
 // Démarrer le bot avec un timeout
 const botProcess = spawn('node', ['index.js'], {

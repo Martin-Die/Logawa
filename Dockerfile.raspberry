@@ -16,8 +16,7 @@ COPY . .
 # Créer le répertoire des logs
 RUN mkdir -p /app/logs
 
-# Exposer le port
-EXPOSE 3000
+
 
 # Variables d'environnement par défaut
 ENV NODE_ENV=production
