@@ -123,4 +123,11 @@ config.json
 token.json
 
 # Forbidden words list (contains sensitive content)
-forbidden-words.txt 
+forbidden-words.txt
+
+# Text files (logs, data, etc.)
+*.txt
+
+# Exceptions: keep example files
+!*.example.txt
+!env.example 
