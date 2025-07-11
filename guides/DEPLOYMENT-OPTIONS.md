@@ -37,7 +37,10 @@
    ```
    DISCORD_TOKEN=votre_token_discord
    GUILD_ID=votre_guild_id
-   LOG_CHANNEL_ID=votre_channel_id
+   STATUS_LOG_CHANNEL_ID=votre_channel_id
+   MESSAGES_LOG_CHANNEL_ID=votre_channel_id
+   FORBIDDEN_WORDS_LOG_CHANNEL_ID=votre_channel_id
+   MODERATION_LOG_CHANNEL_ID=votre_channel_id
    IGNORED_CHANNELS=logs,announcements
    LOG_LEVEL=info
    WEBHOOK_URL=votre_webhook_url
@@ -98,7 +101,10 @@ nano .env
 ```env
 DISCORD_TOKEN=votre_token_discord
 GUILD_ID=votre_guild_id
-LOG_CHANNEL_ID=votre_channel_id
+STATUS_LOG_CHANNEL_ID=votre_channel_id
+MESSAGES_LOG_CHANNEL_ID=votre_channel_id
+FORBIDDEN_WORDS_LOG_CHANNEL_ID=votre_channel_id
+MODERATION_LOG_CHANNEL_ID=votre_channel_id
 IGNORED_CHANNELS=logs,announcements
 LOG_LEVEL=info
 WEBHOOK_URL=votre_webhook_url
@@ -183,7 +189,7 @@ Si vous devez utiliser Render gratuit, utilisez le service de ping externe :
 
 ### **Problèmes courants**
 1. **Bot ne répond pas** → Vérifier les permissions
-2. **Logs vides** → Vérifier LOG_CHANNEL_ID
+2. **Logs vides** → Vérifier les canaux de logs configurés
 3. **Erreurs de token** → Vérifier DISCORD_TOKEN
 4. **Bot déconnecté** → Vérifier la plateforme de déploiement
 

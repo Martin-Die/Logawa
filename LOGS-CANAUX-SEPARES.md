@@ -45,13 +45,10 @@ MODERATION_LOG_CHANNEL_ID=1234567890123456792
 # Configuration des mots interdits (optionnel)
 FORBIDDEN_WORDS=mot1,mot2,mot3
 
-# Canal de fallback (si un canal spécifique n'est pas configuré)
-LOG_CHANNEL_ID=1234567890123456789
+
 ```
 
-### Configuration Rétrocompatible
 
-Si vous ne configurez qu'un seul canal (`LOG_CHANNEL_ID`), tous les logs seront envoyés vers ce canal par défaut.
 
 ## Création des Canaux
 

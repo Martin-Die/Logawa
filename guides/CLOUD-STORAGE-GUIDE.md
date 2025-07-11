@@ -150,7 +150,10 @@ Vous pouvez activer plusieurs services en même temps :
 ```env
 # Discord (déjà configuré)
 DISCORD_TOKEN=votre_token_discord
-LOG_CHANNEL_ID=votre_channel_id
+STATUS_LOG_CHANNEL_ID=votre_channel_id
+MESSAGES_LOG_CHANNEL_ID=votre_channel_id
+FORBIDDEN_WORDS_LOG_CHANNEL_ID=votre_channel_id
+MODERATION_LOG_CHANNEL_ID=votre_channel_id
 WEBHOOK_URL=votre_webhook_url
 
 # GitHub

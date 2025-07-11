@@ -71,7 +71,10 @@ Contenu du fichier `.env` :
 ```bash
 DISCORD_TOKEN=votre_token_discord_ici
 GUILD_ID=votre_id_serveur_ici
-LOG_CHANNEL_ID=votre_id_canal_logs_ici
+STATUS_LOG_CHANNEL_ID=votre_id_canal_statut_ici
+MESSAGES_LOG_CHANNEL_ID=votre_id_canal_messages_ici
+FORBIDDEN_WORDS_LOG_CHANNEL_ID=votre_id_canal_mots_interdits_ici
+MODERATION_LOG_CHANNEL_ID=votre_id_canal_moderation_ici
 IGNORED_CHANNELS=channel_id_1,channel_id_2
 LOG_LEVEL=info
 NODE_ENV=production
@@ -130,7 +133,10 @@ services:
       - NODE_ENV=production
       - DISCORD_TOKEN=${DISCORD_TOKEN}
       - GUILD_ID=${GUILD_ID}
-      - LOG_CHANNEL_ID=${LOG_CHANNEL_ID}
+      - STATUS_LOG_CHANNEL_ID=${STATUS_LOG_CHANNEL_ID}
+      - MESSAGES_LOG_CHANNEL_ID=${MESSAGES_LOG_CHANNEL_ID}
+      - FORBIDDEN_WORDS_LOG_CHANNEL_ID=${FORBIDDEN_WORDS_LOG_CHANNEL_ID}
+      - MODERATION_LOG_CHANNEL_ID=${MODERATION_LOG_CHANNEL_ID}
       - IGNORED_CHANNELS=${IGNORED_CHANNELS:-}
       - LOG_LEVEL=${LOG_LEVEL:-info}
     volumes:

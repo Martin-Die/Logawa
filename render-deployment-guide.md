@@ -61,7 +61,10 @@ Dans la section "Environment Variables", ajoutez :
 |----------|-------------|---------|
 | `DISCORD_TOKEN` | Token de votre bot Discord | `votre_token_discord_ici` |
 | `GUILD_ID` | ID de votre serveur Discord | `votre_guild_id_ici` |
-| `LOG_CHANNEL_ID` | ID du salon de logs | `votre_channel_id_ici` |
+| `STATUS_LOG_CHANNEL_ID` | ID du canal de statut | `votre_channel_id_ici` |
+| `MESSAGES_LOG_CHANNEL_ID` | ID du canal des messages | `votre_channel_id_ici` |
+| `FORBIDDEN_WORDS_LOG_CHANNEL_ID` | ID du canal des mots interdits | `votre_channel_id_ici` |
+| `MODERATION_LOG_CHANNEL_ID` | ID du canal de modération | `votre_channel_id_ici` |
 | `IGNORED_CHANNELS` | Salons à ignorer (optionnel) | `channel_id_1,channel_id_2` |
 | `LOG_LEVEL` | Niveau de log | `info` |
 | `WEBHOOK_URL` | Webhook Discord pour logs externes (optionnel) | `votre_webhook_url_ici` |
