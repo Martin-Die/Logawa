@@ -7,6 +7,8 @@
     "start": "node index.js",
     "dev": "nodemon index.js",
     "test": "echo \"Error: no test specified\" && exit 1",
+    "ping": "node scripts/render-ping.js",
+    "ping:start": "node scripts/render-ping.js",
     "logs:list": "node scripts/log-manager.js list",
     "logs:analyze": "node scripts/log-manager.js analyze",
     "logs:search": "node scripts/log-manager.js search",

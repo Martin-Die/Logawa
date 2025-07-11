@@ -1,13 +1,15 @@
 const https = require('https');
 const http = require('http');
 
-// Configuration
-const PING_URL = process.env.PING_URL || 'https://your-render-app.onrender.com/ping';
-const PING_INTERVAL = 14 * 60 * 1000; // 14 minutes (pour éviter la veille)
+// Configuration optimisée pour Render
+const PING_URL = process.env.PING_URL || process.env.RENDER_EXTERNAL_URL + '/ping' || 'https://your-render-app.onrender.com/ping';
+const PING_INTERVAL = 5 * 60 * 1000; // 5 minutes (plus fréquent pour Render)
 const LOG_INTERVAL = 60 * 60 * 1000; // Log toutes les heures
 
 let pingCount = 0;
 let lastLogTime = Date.now();
+let consecutiveFailures = 0;
+const MAX_FAILURES = 3;
 
 function pingServer() {
     const url = new URL(PING_URL);
@@ -22,6 +24,7 @@ function pingServer() {
         
         res.on('end', () => {
             pingCount++;
+            consecutiveFailures = 0; // Reset failures on success
             const now = new Date().toISOString();
             
             try {
@@ -43,14 +46,23 @@ function pingServer() {
     });
     
     req.on('error', (error) => {
+        consecutiveFailures++;
         const now = new Date().toISOString();
-        console.error(`[${now}] Ping #${pingCount} - Error: ${error.message}`);
+        console.error(`[${now}] Ping #${pingCount} - Error: ${error.message} (Failure #${consecutiveFailures})`);
+        
+        // Si trop d'échecs consécutifs, redémarrer le ping plus fréquemment
+        if (consecutiveFailures >= MAX_FAILURES) {
+            console.error(`[${now}] Too many consecutive failures, increasing ping frequency`);
+            clearInterval(pingInterval);
+            pingInterval = setInterval(pingServer, 2 * 60 * 1000); // Ping toutes les 2 minutes
+        }
     });
     
     req.setTimeout(10000, () => {
         req.destroy();
+        consecutiveFailures++;
         const now = new Date().toISOString();
-        console.error(`[${now}] Ping #${pingCount} - Timeout`);
+        console.error(`[${now}] Ping #${pingCount} - Timeout (Failure #${consecutiveFailures})`);
     });
 }
 
@@ -63,7 +75,7 @@ console.log(`Ping interval: ${PING_INTERVAL / 1000} seconds`);
 pingServer();
 
 // Pings réguliers
-setInterval(pingServer, PING_INTERVAL);
+let pingInterval = setInterval(pingServer, PING_INTERVAL);
 
 // Gestion de l'arrêt propre
 process.on('SIGINT', () => {

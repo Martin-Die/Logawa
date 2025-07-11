@@ -57,6 +57,22 @@ app.get('/ping', (req, res) => {
     });
 });
 
+// Keep-alive endpoint spécifiquement pour Render
+app.get('/keep-alive', (req, res) => {
+    res.json({
+        alive: true,
+        timestamp: new Date().toISOString(),
+        uptime: process.uptime(),
+        service: 'Logawa Discord Bot',
+        platform: 'Render'
+    });
+});
+
+// Endpoint pour les services de monitoring externes
+app.get('/monitor', (req, res) => {
+    res.status(200).send('OK');
+});
+
 // Start the server
 const PORT = process.env.PORT || 3000;
 app.listen(PORT, () => {
@@ -64,6 +80,7 @@ app.listen(PORT, () => {
     logger.info(`Health check available at: http://localhost:${PORT}/health`);
     logger.info(`Status available at: http://localhost:${PORT}/status`);
     logger.info(`Ping available at: http://localhost:${PORT}/ping`);
+    logger.info(`Keep-alive available at: http://localhost:${PORT}/keep-alive`);
 });
 
 module.exports = app; 
