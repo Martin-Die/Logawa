@@ -208,7 +208,7 @@ class ServerEvents {
                 ]
             );
 
-            await this.discordLogger.sendLog(embed);
+            await this.discordLogger.sendLog(embed, 'status');
 
             logger.info('Emoji created', {
                 emojiId: emoji.id,
@@ -234,7 +234,7 @@ class ServerEvents {
                 ]
             );
 
-            await this.discordLogger.sendLog(embed);
+            await this.discordLogger.sendLog(embed, 'status');
 
             logger.info('Emoji deleted', {
                 emojiId: emoji.id,
@@ -262,7 +262,7 @@ class ServerEvents {
                 ]
             );
 
-            await this.discordLogger.sendLog(embed);
+            await this.discordLogger.sendLog(embed, 'status');
 
             logger.info('Invite created', {
                 inviteCode: invite.code,
@@ -291,7 +291,7 @@ class ServerEvents {
                 ]
             );
 
-            await this.discordLogger.sendLog(embed);
+            await this.discordLogger.sendLog(embed, 'status');
 
             logger.info('Invite deleted', {
                 inviteCode: invite.code,

@@ -130,7 +130,17 @@ class MessageEvents {
                 ]
             );
 
-            await this.discordLogger.sendLog(embed, 'messages');
+            await this.discordLogger.sendLog(embed, 'moderation');
+            
+            // Log to specific file
+            this.discordLogger.logToFile('moderation', `Message deleted: ${message.author.tag} in #${message.channel.name}`, {
+                messageId: message.id,
+                authorId: message.author.id,
+                authorTag: message.author.tag,
+                channelId: message.channel.id,
+                channelName: message.channel.name,
+                content: message.content?.substring(0, 200)
+            });
             
             logger.info('Message deleted', {
                 messageId: message.id,
@@ -175,7 +185,15 @@ class MessageEvents {
                 embed.addFields({ name: 'Note', value: `... and ${validMessages.length - 10} more messages`, inline: false });
             }
 
-            await this.discordLogger.sendLog(embed, 'messages');
+            await this.discordLogger.sendLog(embed, 'moderation');
+            
+            // Log to specific file
+            this.discordLogger.logToFile('moderation', `Bulk messages deleted: ${validMessages.length} messages in #${validMessages[0].channel.name}`, {
+                count: validMessages.length,
+                channelId: validMessages[0].channel.id,
+                channelName: validMessages[0].channel.name,
+                messageIds: validMessages.map(msg => msg.id)
+            });
             
             logger.info('Bulk messages deleted', {
                 count: validMessages.length,
@@ -239,7 +257,7 @@ class MessageEvents {
                 ]
             );
 
-            await this.discordLogger.sendLog(embed);
+            await this.discordLogger.sendLog(embed, 'messages');
             
             logger.info('Reaction removed', {
                 messageId: message.id,
