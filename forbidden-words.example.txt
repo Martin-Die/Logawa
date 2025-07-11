@@ -1,0 +1,7 @@
+exemple1
+exemple2
+exemple3
+mot_interdit
+terme_banni
+insulte
+spam 

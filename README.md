@@ -28,11 +28,13 @@ A comprehensive, secure, and reliable Discord bot designed to log all server act
 - **Invite Management**: Records invite creation and deletion
 
 ### Logging Features
+- **Multi-Channel Logging**: Separate Discord channels for different log types (status, messages, forbidden words, moderation)
 - **Dual Logging**: Simultaneous file and Discord channel logging
 - **Structured Logs**: Readable text format with timestamps
 - **Daily Rotation**: Automatic log file rotation and cleanup
 - **Error Handling**: Comprehensive error logging and recovery
 - **Rich Embeds**: Beautiful Discord embeds with color coding
+- **Forbidden Words Detection**: Automatic detection and logging of forbidden words from configurable list
 
 ## 📋 Requirements
 
@@ -68,6 +70,23 @@ A comprehensive, secure, and reliable Discord bot designed to log all server act
    LOG_CHANNEL_ID=your_log_channel_id_here
    IGNORED_CHANNELS=channel_id_1,channel_id_2,channel_id_3
    LOG_LEVEL=info
+   ```
+
+   **Optional**: Configure separate log channels:
+   ```env
+   STATUS_LOG_CHANNEL_ID=1234567890123456789
+   MESSAGES_LOG_CHANNEL_ID=1234567890123456790
+   FORBIDDEN_WORDS_LOG_CHANNEL_ID=1234567890123456791
+   MODERATION_LOG_CHANNEL_ID=1234567890123456792
+   ```
+
+5. **Configure forbidden words (optional)**
+   ```bash
+   # Copy the example file
+   cp forbidden-words.example.txt forbidden-words.txt
+   
+   # Edit the file to add your forbidden words (one word per line)
+   # Use any text editor to modify the list
    ```
 
 5. **Start the bot**
@@ -214,6 +233,24 @@ BACKUP_COMPRESS=true
 BACKUP_NOTIFY_DISCORD=true
 BACKUP_WEBHOOK_URL=url_webhook_discord
 ```
+
+### 📝 Gestion des Mots Interdits
+
+La liste des mots interdits se modifie en éditant directement le fichier `forbidden-words.txt` :
+
+```bash
+# Copier le fichier d'exemple
+cp forbidden-words.example.txt forbidden-words.txt
+
+# Éditer avec n'importe quel éditeur de texte
+nano forbidden-words.txt
+# ou
+notepad forbidden-words.txt
+# ou
+code forbidden-words.txt
+```
+
+**Format :** Un mot par ligne, sans commentaires.
 
 ### Render Dashboard
 - Go to your service in Render dashboard

@@ -98,7 +98,7 @@ class ServerEvents {
                 ]
             );
 
-            await this.discordLogger.sendLog(embed);
+            await this.discordLogger.sendLog(embed, 'status');
 
             logger.info('Role created', {
                 roleId: role.id,
@@ -126,7 +126,7 @@ class ServerEvents {
                 ]
             );
 
-            await this.discordLogger.sendLog(embed);
+            await this.discordLogger.sendLog(embed, 'status');
 
             logger.info('Role deleted', {
                 roleId: role.id,
@@ -180,7 +180,7 @@ class ServerEvents {
                     ]
                 );
 
-                await this.discordLogger.sendLog(embed);
+                await this.discordLogger.sendLog(embed, 'status');
 
                 logger.info('Role updated', {
                     roleId: newRole.id,

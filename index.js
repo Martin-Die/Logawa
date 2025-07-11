@@ -177,26 +177,55 @@ class LogawaLoggerBot {
                     { name: 'Bot Version', value: '1.0.0', inline: true },
                     { name: 'Node.js Version', value: process.version, inline: true },
                     { name: 'Uptime', value: 'Just started', inline: true },
-                    { name: 'Ignored Channels', value: config.ignoredChannels.length.toString(), inline: true }
+                    { name: 'Ignored Channels', value: config.ignoredChannels.length.toString(), inline: true },
+                    { name: 'Forbidden Words', value: config.forbiddenWords.length.toString(), inline: true }
                 ]
             );
 
-            await this.discordLogger.sendLog(embed);
+            await this.discordLogger.sendLog(embed, 'status');
         } catch (error) {
             logger.error('Error sending startup log:', error);
         }
     }
 
-    handleError(error) {
+    async handleError(error) {
         logger.error('Discord client error:', error);
+        
+        try {
+            await this.discordLogger.logStatus('error', {
+                description: 'Discord client encountered an error',
+                error: error.message || error.toString(),
+                stack: error.stack?.substring(0, 500) || 'No stack trace'
+            });
+        } catch (logError) {
+            logger.error('Failed to log error to Discord:', logError);
+        }
     }
 
-    handleWarn(warning) {
+    async handleWarn(warning) {
         logger.warn('Discord client warning:', warning);
+        
+        try {
+            await this.discordLogger.logStatus('warning', {
+                description: 'Discord client warning',
+                warning: warning.toString()
+            });
+        } catch (logError) {
+            logger.error('Failed to log warning to Discord:', logError);
+        }
     }
 
-    handleDisconnect() {
+    async handleDisconnect() {
         logger.warn('Bot disconnected from Discord');
+        
+        try {
+            await this.discordLogger.logStatus('warning', {
+                description: 'Bot disconnected from Discord',
+                action: 'Attempting to reconnect...'
+            });
+        } catch (logError) {
+            logger.error('Failed to log disconnect to Discord:', logError);
+        }
     }
 
     handleReconnecting() {

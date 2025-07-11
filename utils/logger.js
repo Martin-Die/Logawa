@@ -205,17 +205,43 @@ logger.driveLogger = driveLogger;
 class DiscordLogger {
     constructor(client) {
         this.client = client;
-        this.logChannel = null;
+        this.logChannels = {
+            status: null,
+            messages: null,
+            forbiddenWords: null,
+            moderation: null
+        };
     }
 
     async initialize() {
         try {
-            this.logChannel = await this.client.channels.fetch(config.logChannelId);
-            if (!this.logChannel) {
-                logger.error('Log channel not found');
+            // Initialize all log channels
+            const channelPromises = Object.entries(config.logChannels).map(async ([type, channelId]) => {
+                if (channelId) {
+                    try {
+                        const channel = await this.client.channels.fetch(channelId);
+                        if (channel) {
+                            this.logChannels[type] = channel;
+                            logger.info(`Log channel '${type}' initialized successfully`);
+                        } else {
+                            logger.warn(`Log channel '${type}' not found: ${channelId}`);
+                        }
+                    } catch (error) {
+                        logger.error(`Failed to initialize log channel '${type}':`, error);
+                    }
+                }
+            });
+
+            await Promise.all(channelPromises);
+            
+            // Check if at least one channel is available
+            const availableChannels = Object.values(this.logChannels).filter(channel => channel !== null);
+            if (availableChannels.length === 0) {
+                logger.error('No log channels could be initialized');
                 return false;
             }
-            logger.info('Discord logger initialized successfully');
+            
+            logger.info(`Discord logger initialized successfully with ${availableChannels.length} channels`);
             return true;
         } catch (error) {
             logger.error('Failed to initialize Discord logger:', error);
@@ -223,13 +249,20 @@ class DiscordLogger {
         }
     }
 
-    async sendLog(embed) {
+    async sendLog(embed, channelType = 'messages') {
         try {
-            if (this.logChannel) {
-                await this.logChannel.send({ embeds: [embed] });
+            const channel = this.logChannels[channelType];
+            if (channel) {
+                await channel.send({ embeds: [embed] });
+            } else {
+                // Fallback to messages channel if specified channel is not available
+                const fallbackChannel = this.logChannels.messages || Object.values(this.logChannels).find(ch => ch !== null);
+                if (fallbackChannel) {
+                    await fallbackChannel.send({ embeds: [embed] });
+                }
             }
         } catch (error) {
-            logger.error('Failed to send log to Discord:', error);
+            logger.error(`Failed to send log to Discord channel '${channelType}':`, error);
         }
     }
 
@@ -264,7 +297,7 @@ class DiscordLogger {
             ]
         );
 
-        await this.sendLog(embed);
+        await this.sendLog(embed, 'messages');
         logger.info(`Message ${action}: ${message.author.tag} in #${message.channel.name}`, {
             messageId: message.id,
             authorId: message.author.id,
@@ -299,7 +332,7 @@ class DiscordLogger {
             embed.addFields({ name: 'Duration', value: duration, inline: true });
         }
 
-        await this.sendLog(embed);
+        await this.sendLog(embed, 'moderation');
         logger.info(`Moderation action: ${action} on ${user.tag} by ${moderator.tag}`, {
             userId: user.id,
             moderatorId: moderator.id,
@@ -357,11 +390,66 @@ class DiscordLogger {
             embed.addFields({ name: key.charAt(0).toUpperCase() + key.slice(1), value: value.toString(), inline: true });
         });
 
-        await this.sendLog(embed);
+        await this.sendLog(embed, 'status');
         logger.info(`Channel event: ${action} for #${channel.name}`, {
             channelId: channel.id,
             action: action,
             details: details
+        });
+    }
+
+    // Log status events (bot startup, shutdown, errors, etc.)
+    async logStatus(status, details = {}) {
+        const colors = {
+            'startup': 0x00ff00,
+            'shutdown': 0xff0000,
+            'error': 0xff0000,
+            'warning': 0xffff00,
+            'info': 0x0099ff,
+            'ready': 0x00ff00
+        };
+
+        const embed = this.createEmbed(
+            `Bot Status: ${status.charAt(0).toUpperCase() + status.slice(1)}`,
+            details.description || `Bot status changed to: ${status}`,
+            colors[status] || 0x00ff00,
+            [
+                { name: 'Status', value: status.toUpperCase(), inline: true },
+                { name: 'Timestamp', value: moment().format('YYYY-MM-DD HH:mm:ss'), inline: true }
+            ]
+        );
+
+        Object.entries(details).forEach(([key, value]) => {
+            if (key !== 'description') {
+                embed.addFields({ name: key.charAt(0).toUpperCase() + key.slice(1), value: value.toString(), inline: true });
+            }
+        });
+
+        await this.sendLog(embed, 'status');
+        logger.info(`Bot status: ${status}`, details);
+    }
+
+    // Log forbidden words detection
+    async logForbiddenWord(message, forbiddenWord, action = 'detected') {
+        const embed = this.createEmbed(
+            `Forbidden Word ${action.charAt(0).toUpperCase() + action.slice(1)}`,
+            `**Channel:** ${message.channel.name} (${message.channel.id})\n**Author:** ${message.author.tag} (${message.author.id})`,
+            0xff0000,
+            [
+                { name: 'Forbidden Word', value: forbiddenWord, inline: true },
+                { name: 'Message Content', value: message.content || 'No content', inline: false },
+                { name: 'Message ID', value: message.id, inline: true },
+                { name: 'Timestamp', value: moment().format('YYYY-MM-DD HH:mm:ss'), inline: true }
+            ]
+        );
+
+        await this.sendLog(embed, 'forbiddenWords');
+        logger.info(`Forbidden word ${action}: "${forbiddenWord}" by ${message.author.tag} in #${message.channel.name}`, {
+            messageId: message.id,
+            authorId: message.author.id,
+            channelId: message.channel.id,
+            forbiddenWord: forbiddenWord,
+            content: message.content?.substring(0, 100) + (message.content?.length > 100 ? '...' : '')
         });
     }
 }

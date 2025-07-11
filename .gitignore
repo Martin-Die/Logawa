@@ -120,4 +120,7 @@ Thumbs.db
 
 # Discord bot specific
 config.json
-token.json 
+token.json
+
+# Forbidden words list (contains sensitive content)
+forbidden-words.txt 

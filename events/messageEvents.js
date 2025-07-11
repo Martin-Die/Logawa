@@ -26,10 +26,39 @@ class MessageEvents {
         return true;
     }
 
+    // Check for forbidden words in message
+    checkForbiddenWords(message) {
+        if (!message.content || config.forbiddenWords.length === 0) return null;
+        
+        const messageContent = message.content.toLowerCase();
+        const foundWords = config.forbiddenWords.filter(word => 
+            messageContent.includes(word)
+        );
+        
+        return foundWords.length > 0 ? foundWords[0] : null; // Return first found word
+    }
+
+
+
     // Message created event
     async handleMessageCreate(message) {
         try {
             if (!this.shouldLogMessage(message)) return;
+
+            // Check for forbidden words
+            const forbiddenWord = this.checkForbiddenWords(message);
+            if (forbiddenWord) {
+                await this.discordLogger.logForbiddenWord(message, forbiddenWord, 'detected');
+                
+                // Log statistics
+                logger.info(`Mot interdit détecté: "${forbiddenWord}" dans le message de ${message.author.tag}`, {
+                    messageId: message.id,
+                    authorId: message.author.id,
+                    channelId: message.channel.id,
+                    forbiddenWord: forbiddenWord,
+                    totalForbiddenWords: config.forbiddenWords.length
+                });
+            }
 
             await this.discordLogger.logMessage(message, 'sent');
             
@@ -41,7 +70,8 @@ class MessageEvents {
                 channelName: message.channel.name,
                 content: message.content?.substring(0, 200),
                 attachments: message.attachments.size,
-                embeds: message.embeds.length
+                embeds: message.embeds.length,
+                forbiddenWord: forbiddenWord || null
             });
         } catch (error) {
             logger.error('Error handling message create event:', error);
@@ -68,7 +98,7 @@ class MessageEvents {
                 ]
             );
 
-            await this.discordLogger.sendLog(embed);
+            await this.discordLogger.sendLog(embed, 'messages');
             
             logger.info('Message edited', {
                 messageId: newMessage.id,
@@ -100,7 +130,7 @@ class MessageEvents {
                 ]
             );
 
-            await this.discordLogger.sendLog(embed);
+            await this.discordLogger.sendLog(embed, 'messages');
             
             logger.info('Message deleted', {
                 messageId: message.id,
@@ -145,7 +175,7 @@ class MessageEvents {
                 embed.addFields({ name: 'Note', value: `... and ${validMessages.length - 10} more messages`, inline: false });
             }
 
-            await this.discordLogger.sendLog(embed);
+            await this.discordLogger.sendLog(embed, 'messages');
             
             logger.info('Bulk messages deleted', {
                 count: validMessages.length,
@@ -177,7 +207,7 @@ class MessageEvents {
                 ]
             );
 
-            await this.discordLogger.sendLog(embed);
+            await this.discordLogger.sendLog(embed, 'messages');
             
             logger.info('Reaction added', {
                 messageId: message.id,
