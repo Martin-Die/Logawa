@@ -1,9 +1,8 @@
 [build]
-builder = "DOCKERFILE"
-dockerfile = "Dockerfile.simple"
+builder = "NIXPACKS"
 
 [deploy]
-startCommand = "npm start"
+startCommand = "node start.js"
 healthCheckPath = "/health"
 healthCheckInterval = 30
 port = 3000
