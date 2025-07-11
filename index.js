@@ -1,4 +1,4 @@
-//const { Client, GatewayIntentBits, Partials } = require('discord.js');
+const { Client, GatewayIntentBits, Partials } = require('discord.js');
 const { logger, DiscordLogger } = require('./utils/logger');
 const MessageEvents = require('./events/messageEvents');
 const ModerationEvents = require('./events/moderationEvents');
