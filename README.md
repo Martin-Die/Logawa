@@ -59,15 +59,26 @@ A comprehensive, secure, and reliable Discord bot designed to log all server act
 
 3. **Create environment file**
    ```bash
-   # Create .env file manually
+   # Copy the example environment file
+   cp env.example .env
+   
+   # Edit the .env file with your actual values
+   nano .env
+   # or
+   notepad .env
+   # or
+   code .env
    ```
 
 4. **Configure the bot**
-   Create a `.env` file with your Discord bot credentials:
+   Edit the `.env` file with your Discord bot credentials:
    ```env
    DISCORD_TOKEN=your_bot_token_here
    GUILD_ID=your_guild_id_here
-   LOG_CHANNEL_ID=your_log_channel_id_here
+   STATUS_LOG_CHANNEL_ID=your_status_log_channel_id_here
+   MESSAGES_LOG_CHANNEL_ID=your_messages_log_channel_id_here
+   FORBIDDEN_WORDS_LOG_CHANNEL_ID=your_forbidden_words_log_channel_id_here
+   MODERATION_LOG_CHANNEL_ID=your_moderation_log_channel_id_here
    IGNORED_CHANNELS=channel_id_1,channel_id_2,channel_id_3
    LOG_LEVEL=info
    ```
@@ -117,7 +128,10 @@ A comprehensive, secure, and reliable Discord bot designed to log all server act
    ```
    DISCORD_TOKEN=your_bot_token_here
    GUILD_ID=your_guild_id_here
-   LOG_CHANNEL_ID=your_log_channel_id_here
+   STATUS_LOG_CHANNEL_ID=your_status_log_channel_id_here
+   MESSAGES_LOG_CHANNEL_ID=your_messages_log_channel_id_here
+   FORBIDDEN_WORDS_LOG_CHANNEL_ID=your_forbidden_words_log_channel_id_here
+   MODERATION_LOG_CHANNEL_ID=your_moderation_log_channel_id_here
    IGNORED_CHANNELS=channel_id_1,channel_id_2,channel_id_3
    LOG_LEVEL=info
    WEBHOOK_URL=your_webhook_url_here (optional)

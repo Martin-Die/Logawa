@@ -54,8 +54,10 @@ class LogawaLoggerBot {
                 throw new Error('Guild ID is required. Please set GUILD_ID in your .env file.');
             }
 
-            if (!config.logChannelId) {
-                throw new Error('Log channel ID is required. Please set LOG_CHANNEL_ID in your .env file.');
+            // Check if at least one log channel is configured
+            const hasLogChannels = Object.values(config.logChannels).some(channelId => channelId);
+            if (!hasLogChannels) {
+                throw new Error('At least one log channel ID is required. Please set STATUS_LOG_CHANNEL_ID, MESSAGES_LOG_CHANNEL_ID, FORBIDDEN_WORDS_LOG_CHANNEL_ID, or MODERATION_LOG_CHANNEL_ID in your .env file.');
             }
 
             logger.info('Initializing Logawa Logger Bot...');
@@ -83,7 +85,11 @@ class LogawaLoggerBot {
             logger.info('Logawa Logger Bot is now online and ready!');
             logger.info(`Logged in as: ${this.client.user.tag}`);
             logger.info(`Guild: ${this.client.guilds.cache.get(config.guildId)?.name || 'Unknown'}`);
-            logger.info(`Log Channel: ${this.client.channels.cache.get(config.logChannelId)?.name || 'Unknown'}`);
+            const configuredChannels = Object.entries(config.logChannels)
+                .filter(([type, channelId]) => channelId)
+                .map(([type, channelId]) => `${type}: ${this.client.channels.cache.get(channelId)?.name || 'Unknown'}`)
+                .join(', ');
+            logger.info(`Configured Log Channels: ${configuredChannels || 'None'}`);
 
         } catch (error) {
             logger.error('Failed to initialize bot:', error);
@@ -151,16 +157,20 @@ class LogawaLoggerBot {
                 logger.info('All required permissions are present');
             }
 
-            // Check log channel permissions
-            const logChannel = this.client.channels.cache.get(config.logChannelId);
-            if (logChannel) {
-                const channelPermissions = logChannel.permissionsFor(this.client.user);
-                if (!channelPermissions.has('SendMessages')) {
-                    logger.error('Bot cannot send messages to the log channel');
-                } else {
-                    logger.info('Log channel permissions are correct');
+            // Check log channels permissions
+            Object.entries(config.logChannels).forEach(([type, channelId]) => {
+                if (channelId) {
+                    const logChannel = this.client.channels.cache.get(channelId);
+                    if (logChannel) {
+                        const channelPermissions = logChannel.permissionsFor(this.client.user);
+                        if (!channelPermissions.has('SendMessages')) {
+                            logger.error(`Bot cannot send messages to the ${type} log channel`);
+                        } else {
+                            logger.info(`${type} log channel permissions are correct`);
+                        }
+                    }
                 }
-            }
+            });
 
         } catch (error) {
             logger.error('Error checking permissions:', error);

@@ -110,7 +110,8 @@ MODERATION_LOG_CHANNEL_ID=1234567890123456792
 
 ### Configuration Minimale
 ```env
-LOG_CHANNEL_ID=1234567890123456789
+STATUS_LOG_CHANNEL_ID=1234567890123456789
+MESSAGES_LOG_CHANNEL_ID=1234567890123456789
 ```
 
 ## Fonctionnalités
@@ -122,7 +123,7 @@ LOG_CHANNEL_ID=1234567890123456789
 
 ### Fallback Intelligent
 - Si un canal spécifique n'est pas configuré, le bot utilise le canal de messages
-- Si aucun canal n'est configuré, le bot utilise le canal de fallback (`LOG_CHANNEL_ID`)
+- Si aucun canal n'est configuré, le bot affiche une erreur et ne démarre pas
 
 ### Logs Détaillés
 Chaque type de log contient des informations spécifiques :
@@ -160,11 +161,11 @@ Le bot enregistre des informations de debug dans les logs de console :
 
 ## Migration depuis l'Ancienne Version
 
-Si vous utilisez déjà le bot avec un seul canal de logs :
+Si vous utilisez déjà le bot avec l'ancien système :
 
-1. Ajoutez les nouvelles variables d'environnement
+1. Remplacez `LOG_CHANNEL_ID` par les 4 nouveaux canaux
 2. Créez les nouveaux canaux Discord
 3. Redémarrez le bot
 4. Les logs seront automatiquement séparés selon leur type
 
-L'ancienne configuration (`LOG_CHANNEL_ID`) reste compatible et sera utilisée comme fallback. 
+**Note :** L'ancienne variable `LOG_CHANNEL_ID` n'est plus supportée. 

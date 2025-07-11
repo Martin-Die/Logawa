@@ -28,14 +28,11 @@ module.exports = {
     
     // Log Channels Configuration
     logChannels: {
-        status: process.env.STATUS_LOG_CHANNEL_ID || process.env.LOG_CHANNEL_ID,
-        messages: process.env.MESSAGES_LOG_CHANNEL_ID || process.env.LOG_CHANNEL_ID,
-        forbiddenWords: process.env.FORBIDDEN_WORDS_LOG_CHANNEL_ID || process.env.LOG_CHANNEL_ID,
-        moderation: process.env.MODERATION_LOG_CHANNEL_ID || process.env.LOG_CHANNEL_ID
+        status: process.env.STATUS_LOG_CHANNEL_ID,
+        messages: process.env.MESSAGES_LOG_CHANNEL_ID,
+        forbiddenWords: process.env.FORBIDDEN_WORDS_LOG_CHANNEL_ID,
+        moderation: process.env.MODERATION_LOG_CHANNEL_ID
     },
-    
-    // Legacy support - keep the old single channel ID
-    logChannelId: process.env.LOG_CHANNEL_ID,
     
     // Ignored channels for message logging (comma-separated IDs)
     ignoredChannels: process.env.IGNORED_CHANNELS ? 
