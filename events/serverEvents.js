@@ -1,4 +1,4 @@
-const { logger } = require('../utils/logger');
+const { statusLogger, errorLogger } = require('../utils/logger');
 
 class ServerEvents {
     constructor(client, discordLogger) {
@@ -14,14 +14,14 @@ class ServerEvents {
                 'Created By': 'System'
             });
 
-            logger.info('Channel created', {
+            statusLogger.info('Channel created', {
                 channelId: channel.id,
                 channelName: channel.name,
                 channelType: channel.type,
                 guildId: channel.guild?.id
             });
         } catch (error) {
-            logger.error('Error handling channel create event:', error);
+            errorLogger.error('Error handling channel create event:', error);
         }
     }
 
@@ -33,14 +33,14 @@ class ServerEvents {
                 'Deleted By': 'System'
             });
 
-            logger.info('Channel deleted', {
+            statusLogger.info('Channel deleted', {
                 channelId: channel.id,
                 channelName: channel.name,
                 channelType: channel.type,
                 guildId: channel.guild?.id
             });
         } catch (error) {
-            logger.error('Error handling channel delete event:', error);
+            errorLogger.error('Error handling channel delete event:', error);
         }
     }
 
@@ -70,7 +70,7 @@ class ServerEvents {
                     'Updated By': 'System'
                 });
 
-                logger.info('Channel updated', {
+                statusLogger.info('Channel updated', {
                     channelId: newChannel.id,
                     channelName: newChannel.name,
                     changes: changes,
@@ -78,7 +78,7 @@ class ServerEvents {
                 });
             }
         } catch (error) {
-            logger.error('Error handling channel update event:', error);
+            errorLogger.error('Error handling channel update event:', error);
         }
     }
 
@@ -100,7 +100,7 @@ class ServerEvents {
 
             await this.discordLogger.sendLog(embed, 'status');
 
-            logger.info('Role created', {
+            statusLogger.info('Role created', {
                 roleId: role.id,
                 roleName: role.name,
                 color: role.hexColor,
@@ -108,7 +108,7 @@ class ServerEvents {
                 guildId: role.guild.id
             });
         } catch (error) {
-            logger.error('Error handling role create event:', error);
+            errorLogger.error('Error handling role create event:', error);
         }
     }
 
@@ -128,7 +128,7 @@ class ServerEvents {
 
             await this.discordLogger.sendLog(embed, 'status');
 
-            logger.info('Role deleted', {
+            statusLogger.info('Role deleted', {
                 roleId: role.id,
                 roleName: role.name,
                 color: role.hexColor,
@@ -136,7 +136,7 @@ class ServerEvents {
                 guildId: role.guild.id
             });
         } catch (error) {
-            logger.error('Error handling role delete event:', error);
+            errorLogger.error('Error handling role delete event:', error);
         }
     }
 
@@ -182,7 +182,7 @@ class ServerEvents {
 
                 await this.discordLogger.sendLog(embed, 'status');
 
-                logger.info('Role updated', {
+                statusLogger.info('Role updated', {
                     roleId: newRole.id,
                     roleName: newRole.name,
                     changes: changes,
@@ -190,7 +190,7 @@ class ServerEvents {
                 });
             }
         } catch (error) {
-            logger.error('Error handling role update event:', error);
+            errorLogger.error('Error handling role update event:', error);
         }
     }
 
@@ -210,14 +210,14 @@ class ServerEvents {
 
             await this.discordLogger.sendLog(embed, 'status');
 
-            logger.info('Emoji created', {
+            statusLogger.info('Emoji created', {
                 emojiId: emoji.id,
                 emojiName: emoji.name,
                 animated: emoji.animated,
                 guildId: emoji.guild.id
             });
         } catch (error) {
-            logger.error('Error handling emoji create event:', error);
+            errorLogger.error('Error handling emoji create event:', error);
         }
     }
 
@@ -236,14 +236,14 @@ class ServerEvents {
 
             await this.discordLogger.sendLog(embed, 'status');
 
-            logger.info('Emoji deleted', {
+            statusLogger.info('Emoji deleted', {
                 emojiId: emoji.id,
                 emojiName: emoji.name,
                 animated: emoji.animated,
                 guildId: emoji.guild.id
             });
         } catch (error) {
-            logger.error('Error handling emoji delete event:', error);
+            errorLogger.error('Error handling emoji delete event:', error);
         }
     }
 
@@ -264,7 +264,7 @@ class ServerEvents {
 
             await this.discordLogger.sendLog(embed, 'status');
 
-            logger.info('Invite created', {
+            statusLogger.info('Invite created', {
                 inviteCode: invite.code,
                 channelId: invite.channel.id,
                 channelName: invite.channel.name,
@@ -275,7 +275,7 @@ class ServerEvents {
                 guildId: invite.guild.id
             });
         } catch (error) {
-            logger.error('Error handling invite create event:', error);
+            errorLogger.error('Error handling invite create event:', error);
         }
     }
 
@@ -293,14 +293,14 @@ class ServerEvents {
 
             await this.discordLogger.sendLog(embed, 'status');
 
-            logger.info('Invite deleted', {
+            statusLogger.info('Invite deleted', {
                 inviteCode: invite.code,
                 channelId: invite.channel.id,
                 channelName: invite.channel.name,
                 guildId: invite.guild.id
             });
         } catch (error) {
-            logger.error('Error handling invite delete event:', error);
+            errorLogger.error('Error handling invite delete event:', error);
         }
     }
 
@@ -317,7 +317,7 @@ class ServerEvents {
         this.client.on('inviteCreate', this.handleInviteCreate.bind(this));
         this.client.on('inviteDelete', this.handleInviteDelete.bind(this));
         
-        logger.info('Server events registered successfully');
+        statusLogger.info('Server events registered successfully');
     }
 }
 

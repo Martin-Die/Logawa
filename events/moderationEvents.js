@@ -1,4 +1,4 @@
-const { errorLogger } = require('../utils/logger');
+const { moderationLogger, errorLogger } = require('../utils/logger');
 
 class ModerationEvents {
     constructor(client, discordLogger) {
@@ -45,6 +45,14 @@ class ModerationEvents {
                     'kick',
                     reason
                 );
+                
+                // Log to specific file
+                moderationLogger.info(`Member kicked: ${member.user.tag} by ${moderator.tag}`, {
+                    userId: member.user.id,
+                    moderatorId: moderator.id,
+                    reason: reason,
+                    guildId: member.guild.id
+                });
             } else {
                 // Member left voluntarily
                 await this.discordLogger.logMemberEvent(member, 'leave');
@@ -73,6 +81,14 @@ class ModerationEvents {
                     'ban',
                     reason
                 );
+                
+                // Log to specific file
+                moderationLogger.info(`Member banned: ${ban.user.tag} by ${moderator.tag}`, {
+                    userId: ban.user.id,
+                    moderatorId: moderator.id,
+                    reason: reason,
+                    guildId: ban.guild.id
+                });
             }
         } catch (error) {
             errorLogger.error('Error handling ban add event:', error);
@@ -98,6 +114,14 @@ class ModerationEvents {
                     'unban',
                     reason
                 );
+                
+                // Log to specific file
+                moderationLogger.info(`Member unbanned: ${ban.user.tag} by ${moderator.tag}`, {
+                    userId: ban.user.id,
+                    moderatorId: moderator.id,
+                    reason: reason,
+                    guildId: ban.guild.id
+                });
             }
         } catch (error) {
             errorLogger.error('Error handling ban remove event:', error);
@@ -143,6 +167,15 @@ class ModerationEvents {
                         reason,
                         duration
                     );
+                    
+                    // Log to specific file
+                    moderationLogger.info(`Member ${action}: ${newMember.user.tag} by ${moderator.tag}`, {
+                        userId: newMember.user.id,
+                        moderatorId: moderator.id,
+                        reason: reason,
+                        duration: duration,
+                        guildId: newMember.guild.id
+                    });
                 }
             }
 
@@ -172,6 +205,15 @@ class ModerationEvents {
                             reason,
                             `Added: ${addedRoles.map(r => r.name).join(', ')}`
                         );
+                        
+                        // Log to specific file
+                        moderationLogger.info(`Roles added: ${newMember.user.tag} by ${moderator.tag}`, {
+                            userId: newMember.user.id,
+                            moderatorId: moderator.id,
+                            reason: reason,
+                            roles: addedRoles.map(r => r.name).join(', '),
+                            guildId: newMember.guild.id
+                        });
                     }
 
                     if (removedRoles.size > 0) {
@@ -182,6 +224,15 @@ class ModerationEvents {
                             reason,
                             `Removed: ${removedRoles.map(r => r.name).join(', ')}`
                         );
+                        
+                        // Log to specific file
+                        moderationLogger.info(`Roles removed: ${newMember.user.tag} by ${moderator.tag}`, {
+                            userId: newMember.user.id,
+                            moderatorId: moderator.id,
+                            reason: reason,
+                            roles: removedRoles.map(r => r.name).join(', '),
+                            guildId: newMember.guild.id
+                        });
                     }
                 }
             }

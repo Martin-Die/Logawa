@@ -1,4 +1,4 @@
-const { messageLogger, errorLogger } = require('../utils/logger');
+const { messageLogger, moderationLogger, forbiddenWordsLogger, errorLogger } = require('../utils/logger');
 const config = require('../config');
 
 class MessageEvents {
@@ -47,6 +47,14 @@ class MessageEvents {
             const forbiddenWord = this.checkForbiddenWords(message);
             if (forbiddenWord) {
                 await this.discordLogger.logForbiddenWord(message, forbiddenWord, 'detected');
+                // Log forbidden word to specific file
+                forbiddenWordsLogger.info(`Forbidden word detected: ${message.author.tag} in #${message.channel.name}`, {
+                    messageId: message.id,
+                    authorId: message.author.id,
+                    channelId: message.channel.id,
+                    content: message.content?.substring(0, 200),
+                    forbiddenWord: forbiddenWord
+                });
             }
 
             await this.discordLogger.logMessage(message, 'sent');
@@ -118,7 +126,7 @@ class MessageEvents {
             await this.discordLogger.sendLog(embed, 'moderation');
             
             // Log to specific file
-            messageLogger.info(`Message deleted: ${message.author.tag} in #${message.channel.name}`, {
+            moderationLogger.info(`Message deleted: ${message.author.tag} in #${message.channel.name}`, {
                 messageId: message.id,
                 authorId: message.author.id,
                 channelId: message.channel.id,
@@ -162,7 +170,7 @@ class MessageEvents {
             await this.discordLogger.sendLog(embed, 'moderation');
             
             // Log to specific file
-            messageLogger.info(`Bulk messages deleted: ${validMessages.length} messages in #${validMessages[0].channel.name}`, {
+            moderationLogger.info(`Bulk messages deleted: ${validMessages.length} messages in #${validMessages[0].channel.name}`, {
                 count: validMessages.length,
                 channelId: validMessages[0].channel.id,
                 channelName: validMessages[0].channel.name,
