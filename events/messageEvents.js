@@ -1,4 +1,4 @@
-const { logger } = require('../utils/logger');
+const { messageLogger, errorLogger } = require('../utils/logger');
 const config = require('../config');
 
 class MessageEvents {
@@ -38,8 +38,6 @@ class MessageEvents {
         return foundWords.length > 0 ? foundWords[0] : null; // Return first found word
     }
 
-
-
     // Message created event
     async handleMessageCreate(message) {
         try {
@@ -49,20 +47,11 @@ class MessageEvents {
             const forbiddenWord = this.checkForbiddenWords(message);
             if (forbiddenWord) {
                 await this.discordLogger.logForbiddenWord(message, forbiddenWord, 'detected');
-                
-                // Log statistics
-                logger.info(`Mot interdit détecté: "${forbiddenWord}" dans le message de ${message.author.tag}`, {
-                    messageId: message.id,
-                    authorId: message.author.id,
-                    channelId: message.channel.id,
-                    forbiddenWord: forbiddenWord,
-                    totalForbiddenWords: config.forbiddenWords.length
-                });
             }
 
             await this.discordLogger.logMessage(message, 'sent');
             
-            logger.info('Message created', {
+            messageLogger.info('Message created', {
                 messageId: message.id,
                 authorId: message.author.id,
                 authorTag: message.author.tag,
@@ -74,7 +63,7 @@ class MessageEvents {
                 forbiddenWord: forbiddenWord || null
             });
         } catch (error) {
-            logger.error('Error handling message create event:', error);
+            errorLogger.error('Error handling message create event:', error);
         }
     }
 
@@ -100,7 +89,7 @@ class MessageEvents {
 
             await this.discordLogger.sendLog(embed, 'messages');
             
-            logger.info('Message edited', {
+            messageLogger.info('Message edited', {
                 messageId: newMessage.id,
                 authorId: newMessage.author.id,
                 authorTag: newMessage.author.tag,
@@ -110,7 +99,7 @@ class MessageEvents {
                 newContent: newMessage.content?.substring(0, 200)
             });
         } catch (error) {
-            logger.error('Error handling message update event:', error);
+            errorLogger.error('Error handling message update event:', error);
         }
     }
 
@@ -132,17 +121,7 @@ class MessageEvents {
 
             await this.discordLogger.sendLog(embed, 'moderation');
             
-            // Log to specific file
-            this.discordLogger.logToFile('moderation', `Message deleted: ${message.author.tag} in #${message.channel.name}`, {
-                messageId: message.id,
-                authorId: message.author.id,
-                authorTag: message.author.tag,
-                channelId: message.channel.id,
-                channelName: message.channel.name,
-                content: message.content?.substring(0, 200)
-            });
-            
-            logger.info('Message deleted', {
+            messageLogger.info('Message deleted', {
                 messageId: message.id,
                 authorId: message.author.id,
                 authorTag: message.author.tag,
@@ -151,7 +130,7 @@ class MessageEvents {
                 content: message.content?.substring(0, 200)
             });
         } catch (error) {
-            logger.error('Error handling message delete event:', error);
+            errorLogger.error('Error handling message delete event:', error);
         }
     }
 
@@ -187,91 +166,79 @@ class MessageEvents {
 
             await this.discordLogger.sendLog(embed, 'moderation');
             
-            // Log to specific file
-            this.discordLogger.logToFile('moderation', `Bulk messages deleted: ${validMessages.length} messages in #${validMessages[0].channel.name}`, {
-                count: validMessages.length,
-                channelId: validMessages[0].channel.id,
-                channelName: validMessages[0].channel.name,
-                messageIds: validMessages.map(msg => msg.id)
-            });
-            
-            logger.info('Bulk messages deleted', {
+            messageLogger.info('Bulk messages deleted', {
                 count: validMessages.length,
                 channelId: validMessages[0].channel.id,
                 channelName: validMessages[0].channel.name,
                 messageIds: validMessages.map(msg => msg.id)
             });
         } catch (error) {
-            logger.error('Error handling bulk message delete event:', error);
+            errorLogger.error('Error handling message delete bulk event:', error);
         }
     }
 
-    // Message reaction events
+    // Message reaction add event
     async handleMessageReactionAdd(reaction, user) {
         try {
             if (user.bot) return;
-            
-            const message = reaction.message;
-            if (!this.shouldLogMessage(message)) return;
 
             const embed = this.discordLogger.createEmbed(
                 'Reaction Added',
-                `**Channel:** ${message.channel.name} (${message.channel.id})\n**Message Author:** ${message.author.tag}\n**Reactor:** ${user.tag} (${user.id})`,
+                `**Channel:** ${reaction.message.channel.name} (${reaction.message.channel.id})\n**User:** ${user.tag} (${user.id})`,
                 0x00ff00,
                 [
                     { name: 'Emoji', value: reaction.emoji.toString(), inline: true },
-                    { name: 'Message ID', value: message.id, inline: true },
-                    { name: 'Reaction Count', value: reaction.count.toString(), inline: true }
+                    { name: 'Message ID', value: reaction.message.id, inline: true },
+                    { name: 'Message Author', value: reaction.message.author.tag, inline: true }
                 ]
             );
 
             await this.discordLogger.sendLog(embed, 'messages');
             
-            logger.info('Reaction added', {
-                messageId: message.id,
-                reactorId: user.id,
-                reactorTag: user.tag,
+            messageLogger.info('Reaction added', {
                 emoji: reaction.emoji.toString(),
-                channelId: message.channel.id
+                userId: user.id,
+                userTag: user.tag,
+                messageId: reaction.message.id,
+                channelId: reaction.message.channel.id,
+                channelName: reaction.message.channel.name
             });
         } catch (error) {
-            logger.error('Error handling reaction add event:', error);
+            errorLogger.error('Error handling message reaction add event:', error);
         }
     }
 
+    // Message reaction remove event
     async handleMessageReactionRemove(reaction, user) {
         try {
             if (user.bot) return;
-            
-            const message = reaction.message;
-            if (!this.shouldLogMessage(message)) return;
 
             const embed = this.discordLogger.createEmbed(
                 'Reaction Removed',
-                `**Channel:** ${message.channel.name} (${message.channel.id})\n**Message Author:** ${message.author.tag}\n**Reactor:** ${user.tag} (${user.id})`,
+                `**Channel:** ${reaction.message.channel.name} (${reaction.message.channel.id})\n**User:** ${user.tag} (${user.id})`,
                 0xffa500,
                 [
                     { name: 'Emoji', value: reaction.emoji.toString(), inline: true },
-                    { name: 'Message ID', value: message.id, inline: true },
-                    { name: 'Remaining Reactions', value: (reaction.count - 1).toString(), inline: true }
+                    { name: 'Message ID', value: reaction.message.id, inline: true },
+                    { name: 'Message Author', value: reaction.message.author.tag, inline: true }
                 ]
             );
 
             await this.discordLogger.sendLog(embed, 'messages');
             
-            logger.info('Reaction removed', {
-                messageId: message.id,
-                reactorId: user.id,
-                reactorTag: user.tag,
+            messageLogger.info('Reaction removed', {
                 emoji: reaction.emoji.toString(),
-                channelId: message.channel.id
+                userId: user.id,
+                userTag: user.tag,
+                messageId: reaction.message.id,
+                channelId: reaction.message.channel.id,
+                channelName: reaction.message.channel.name
             });
         } catch (error) {
-            logger.error('Error handling reaction remove event:', error);
+            errorLogger.error('Error handling message reaction remove event:', error);
         }
     }
 
-    // Register all message event handlers
     registerEvents() {
         this.client.on('messageCreate', this.handleMessageCreate.bind(this));
         this.client.on('messageUpdate', this.handleMessageUpdate.bind(this));
@@ -279,8 +246,6 @@ class MessageEvents {
         this.client.on('messageDeleteBulk', this.handleMessageDeleteBulk.bind(this));
         this.client.on('messageReactionAdd', this.handleMessageReactionAdd.bind(this));
         this.client.on('messageReactionRemove', this.handleMessageReactionRemove.bind(this));
-        
-        logger.info('Message events registered successfully');
     }
 }
 
