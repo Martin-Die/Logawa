@@ -18,14 +18,18 @@ if ($LASTEXITCODE -ne 0) {
     exit 1
 }
 
+# Verifier Docker et Docker Compose
+Write-Host "Verification de Docker..." -ForegroundColor Yellow
+ssh -i $SSHKey ${User}@${RaspberryIP} "docker --version && docker compose version"
+if ($LASTEXITCODE -ne 0) {
+    Write-Host "Docker ou Docker Compose n'est pas installe." -ForegroundColor Red
+    Write-Host "Veuillez d'abord executer: .\setup-raspberry.ps1" -ForegroundColor Yellow
+    exit 1
+}
+
 # 1. Mettre a jour le code avec git pull
 Write-Host "Mise a jour du code avec git pull..." -ForegroundColor Yellow
-ssh -i $SSHKey ${User}@${RaspberryIP} @"
-cd ~/Logawa
-git stash
-git pull origin main
-git stash pop
-"@
+ssh -i $SSHKey ${User}@${RaspberryIP} "cd ~/Logawa && git stash && git pull origin main && git stash pop 2>/dev/null || true"
 
 if ($LASTEXITCODE -ne 0) {
     Write-Host "Erreur lors de la mise a jour du code" -ForegroundColor Red
@@ -34,12 +38,7 @@ if ($LASTEXITCODE -ne 0) {
 
 # 2. Reconstruire et redemarrer le conteneur
 Write-Host "Reconstruction et redemarrage du conteneur..." -ForegroundColor Yellow
-ssh -i $SSHKey ${User}@${RaspberryIP} @"
-cd ~/Logawa
-docker-compose -f docker-compose.raspberry.yml down
-docker-compose -f docker-compose.raspberry.yml build --no-cache
-docker-compose -f docker-compose.raspberry.yml up -d
-"@
+ssh -i $SSHKey ${User}@${RaspberryIP} "cd ~/Logawa && docker compose -f docker-compose.raspberry.yml down && docker compose -f docker-compose.raspberry.yml build --no-cache && docker compose -f docker-compose.raspberry.yml up -d"
 
 if ($LASTEXITCODE -ne 0) {
     Write-Host "Erreur lors du redemarrage du conteneur" -ForegroundColor Red
@@ -48,8 +47,8 @@ if ($LASTEXITCODE -ne 0) {
 
 # 3. Verifier le statut
 Write-Host "Verification du statut..." -ForegroundColor Yellow
-ssh -i $SSHKey ${User}@${RaspberryIP} "cd ~/Logawa; docker-compose -f docker-compose.raspberry.yml ps"
+ssh -i $SSHKey ${User}@${RaspberryIP} "cd ~/Logawa && docker compose -f docker-compose.raspberry.yml ps"
 
 Write-Host "Deploiement termine avec succes !" -ForegroundColor Green
 Write-Host "Logs du conteneur:" -ForegroundColor Cyan
-ssh -i $SSHKey ${User}@${RaspberryIP} "cd ~/Logawa; docker-compose -f docker-compose.raspberry.yml logs --tail=10" 
+ssh -i $SSHKey ${User}@${RaspberryIP} "cd ~/Logawa && docker compose -f docker-compose.raspberry.yml logs --tail=10" 

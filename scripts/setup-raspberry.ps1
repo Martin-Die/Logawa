@@ -34,7 +34,7 @@ ssh -i $SSHKey ${User}@${RaspberryIP} "if command -v docker > /dev/null 2>&1; th
 
 # 3. Installer Docker Compose si pas deja installe
 Write-Host "Verification de Docker Compose..." -ForegroundColor Yellow
-ssh -i $SSHKey ${User}@${RaspberryIP} "if command -v docker-compose > /dev/null 2>&1; then echo 'Docker Compose est deja installe'; else echo 'Installation de Docker Compose...'; sudo apt install -y docker-compose; fi"
+ssh -i $SSHKey ${User}@${RaspberryIP} "if docker compose version > /dev/null 2>&1; then echo 'Docker Compose est deja installe'; else echo 'Installation de Docker Compose...'; sudo apt install -y docker-compose-plugin; fi"
 
 # 4. Cloner le depot GitHub
 Write-Host "Clonage du depot GitHub..." -ForegroundColor Yellow
