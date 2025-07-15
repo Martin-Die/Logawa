@@ -16,25 +16,25 @@ class MessageEvents {
     shouldLogMessage(message) {
         // Ignore bot messages
         if (message.author.bot) return false;
-        
+
         // Ignore system messages
         if (message.system) return false;
-        
+
         // Ignore specified channels
         if (this.isChannelIgnored(message.channel.id)) return false;
-        
+
         return true;
     }
 
     // Check for forbidden words in message
     checkForbiddenWords(message) {
         if (!message.content || config.forbiddenWords.length === 0) return null;
-        
+
         const messageContent = message.content.toLowerCase();
-        const foundWords = config.forbiddenWords.filter(word => 
+        const foundWords = config.forbiddenWords.filter(word =>
             messageContent.includes(word)
         );
-        
+
         return foundWords.length > 0 ? foundWords[0] : null; // Return first found word
     }
 
@@ -58,7 +58,7 @@ class MessageEvents {
             } else {
                 // Only log to message logger if no forbidden word
                 await this.discordLogger.logMessage(message, 'sent');
-                
+
                 // Log to specific file
                 messageLogger.info(`Message sent: ${message.author.tag} in #${message.channel.name}`, {
                     messageId: message.id,
@@ -76,14 +76,14 @@ class MessageEvents {
     async handleMessageUpdate(oldMessage, newMessage) {
         try {
             if (!this.shouldLogMessage(newMessage)) return;
-            
+
             // Ignore if content hasn't changed (e.g., embed updates)
             if (oldMessage.content === newMessage.content) return;
 
             const embed = this.discordLogger.createEmbed(
                 'Message Edited',
                 `**Channel:** ${newMessage.channel.name} (${newMessage.channel.id})\n**Author:** ${newMessage.author.tag} (${newMessage.author.id})`,
-                0xffff00,
+                0x4169e1,
                 [
                     { name: 'Before', value: oldMessage.content || 'No content', inline: false },
                     { name: 'After', value: newMessage.content || 'No content', inline: false },
@@ -93,7 +93,7 @@ class MessageEvents {
             );
 
             await this.discordLogger.sendLog(embed, 'messages');
-            
+
             // Log to specific file
             messageLogger.info(`Message edited: ${newMessage.author.tag} in #${newMessage.channel.name}`, {
                 messageId: newMessage.id,
@@ -124,7 +124,7 @@ class MessageEvents {
             );
 
             await this.discordLogger.sendLog(embed, 'moderation');
-            
+
             // Log to specific file
             moderationLogger.info(`Message deleted: ${message.author.tag} in #${message.channel.name}`, {
                 messageId: message.id,
@@ -141,7 +141,7 @@ class MessageEvents {
     async handleMessageDeleteBulk(messages) {
         try {
             const validMessages = messages.filter(msg => this.shouldLogMessage(msg));
-            
+
             if (validMessages.length === 0) return;
 
             const embed = this.discordLogger.createEmbed(
@@ -155,7 +155,7 @@ class MessageEvents {
             );
 
             // Add message details (limited to first 10)
-            const messageDetails = validMessages.slice(0, 10).map(msg => 
+            const messageDetails = validMessages.slice(0, 10).map(msg =>
                 `**${msg.author.tag}:** ${msg.content?.substring(0, 50) || 'No content'}`
             ).join('\n');
 
@@ -168,7 +168,7 @@ class MessageEvents {
             }
 
             await this.discordLogger.sendLog(embed, 'moderation');
-            
+
             // Log to specific file
             moderationLogger.info(`Bulk messages deleted: ${validMessages.length} messages in #${validMessages[0].channel.name}`, {
                 count: validMessages.length,
@@ -198,7 +198,7 @@ class MessageEvents {
             );
 
             await this.discordLogger.sendLog(embed, 'messages');
-            
+
             // Log to specific file
             messageLogger.info(`Reaction added: ${user.tag} on message by ${reaction.message.author.tag}`, {
                 emoji: reaction.emoji.toString(),
@@ -229,7 +229,7 @@ class MessageEvents {
             );
 
             await this.discordLogger.sendLog(embed, 'messages');
-            
+
             // Log to specific file
             messageLogger.info(`Reaction removed: ${user.tag} on message by ${reaction.message.author.tag}`, {
                 emoji: reaction.emoji.toString(),
