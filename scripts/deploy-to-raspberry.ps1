@@ -1,5 +1,4 @@
 # Script de deploiement automatique vers Raspberry Pi
-# Usage: .\deploy-to-raspberry.ps1
 
 param(
     [string]$RaspberryIP = "192.168.0.19",

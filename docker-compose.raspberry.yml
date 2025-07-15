@@ -17,11 +17,13 @@ services:
       - MODERATION_LOG_CHANNEL_ID=${MODERATION_LOG_CHANNEL_ID}
       - IGNORED_CHANNELS=${IGNORED_CHANNELS:-}
       - LOG_LEVEL=${LOG_LEVEL:-info}
+      - LOGS_PATH=${LOGS_PATH:-/app/logs}
+      - BACKUPS_PATH=${BACKUPS_PATH:-/app/backups}
     volumes:
-      # Montage des logs pour persistance
-      - ./logs:/app/logs
-      # Montage optionnel pour les sauvegardes
-      - ./backups:/app/backups
+      # Montage des logs pour persistance (chemin configurable)
+      - ${LOGS_PATH:-./logs}:/app/logs
+      # Montage optionnel pour les sauvegardes (décommenter si nécessaire)
+      # - ${BACKUPS_PATH:-./backups}:/app/backups
 
     networks:
       - liko-network
