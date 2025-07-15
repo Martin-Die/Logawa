@@ -55,18 +55,18 @@ class MessageEvents {
                     content: message.content?.substring(0, 200),
                     forbiddenWord: forbiddenWord
                 });
+            } else {
+                // Only log to message logger if no forbidden word
+                await this.discordLogger.logMessage(message, 'sent');
+                
+                // Log to specific file
+                messageLogger.info(`Message sent: ${message.author.tag} in #${message.channel.name}`, {
+                    messageId: message.id,
+                    authorId: message.author.id,
+                    channelId: message.channel.id,
+                    content: message.content?.substring(0, 200)
+                });
             }
-
-            await this.discordLogger.logMessage(message, 'sent');
-            
-            // Log to specific file
-            messageLogger.info(`Message sent: ${message.author.tag} in #${message.channel.name}`, {
-                messageId: message.id,
-                authorId: message.author.id,
-                channelId: message.channel.id,
-                content: message.content?.substring(0, 200),
-                forbiddenWord: forbiddenWord || null
-            });
         } catch (error) {
             errorLogger.error('Error handling message create event:', error);
         }
