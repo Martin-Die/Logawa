@@ -9,6 +9,15 @@ param(
 
 Write-Host "Deploiement vers Raspberry Pi..." -ForegroundColor Green
 
+# Verifier si le depot existe
+Write-Host "Verification du depot Git..." -ForegroundColor Yellow
+ssh -i $SSHKey ${User}@${RaspberryIP} "test -d ~/Logawa/.git"
+if ($LASTEXITCODE -ne 0) {
+    Write-Host "Le depot Git n'existe pas sur la Raspberry Pi." -ForegroundColor Red
+    Write-Host "Veuillez d'abord executer: .\setup-raspberry.ps1" -ForegroundColor Yellow
+    exit 1
+}
+
 # 1. Mettre a jour le code avec git pull
 Write-Host "Mise a jour du code avec git pull..." -ForegroundColor Yellow
 ssh -i $SSHKey ${User}@${RaspberryIP} @"
