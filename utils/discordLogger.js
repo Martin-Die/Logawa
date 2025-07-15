@@ -1,14 +1,7 @@
 const { EmbedBuilder } = require('discord.js');
 const moment = require('moment');
 const config = require('../config');
-const { 
-    logger, 
-    messageLogger, 
-    moderationLogger, 
-    statusLogger, 
-    forbiddenWordsLogger, 
-    errorLogger 
-} = require('./logger');
+const { errorLogger } = require('./logger');
 
 class DiscordLogger {
     constructor(client) {
@@ -30,9 +23,9 @@ class DiscordLogger {
                         const channel = await this.client.channels.fetch(channelId);
                         if (channel) {
                             this.logChannels[type] = channel;
-                            statusLogger.info(`Log channel '${type}' initialized successfully`);
+                            console.log(`Log channel '${type}' initialized successfully`);
                         } else {
-                            statusLogger.warn(`Log channel '${type}' not found: ${channelId}`);
+                            console.warn(`Log channel '${type}' not found: ${channelId}`);
                         }
                     } catch (error) {
                         errorLogger.error(`Failed to initialize log channel '${type}':`, error);
@@ -49,7 +42,7 @@ class DiscordLogger {
                 return false;
             }
             
-            statusLogger.info(`Discord logger initialized successfully with ${availableChannels.length} channels`);
+            console.log(`Discord logger initialized successfully with ${availableChannels.length} channels`);
             return true;
         } catch (error) {
             errorLogger.error('Failed to initialize Discord logger:', error);
@@ -82,7 +75,7 @@ class DiscordLogger {
                 
                 if (fallbackChannel) {
                     await fallbackChannel.send({ embeds: [embed] });
-                    statusLogger.warn(`Log sent to fallback channel '${fallbackChannel.name}' instead of '${channelType}'`);
+                    console.warn(`Log sent to fallback channel '${fallbackChannel.name}' instead of '${channelType}'`);
                 }
             }
         } catch (error) {
@@ -119,15 +112,6 @@ class DiscordLogger {
         );
 
         await this.sendLog(embed, 'messages');
-        
-        // Log to specific file
-        messageLogger.info(`Message ${action}: ${message.author.tag} in #${message.channel.name}`, {
-            messageId: message.id,
-            authorId: message.author.id,
-            channelId: message.channel.id,
-            content: message.content?.substring(0, 100) + (message.content?.length > 100 ? '...' : ''),
-            action: action
-        });
     }
 
     // Log moderation actions
@@ -157,15 +141,6 @@ class DiscordLogger {
         }
 
         await this.sendLog(embed, 'moderation');
-        
-        // Log to specific file
-        moderationLogger.info(`Moderation action: ${action} on ${user.tag} by ${moderator.tag}`, {
-            userId: user.id,
-            moderatorId: moderator.id,
-            action: action,
-            reason: reason,
-            duration: duration
-        });
     }
 
     // Log member events
@@ -191,11 +166,6 @@ class DiscordLogger {
         });
 
         await this.sendLog(embed, 'status');
-        statusLogger.info(`Member event: ${action} for ${member.user.tag}`, {
-            userId: member.user.id,
-            action: action,
-            details: details
-        });
     }
 
     // Log channel events
@@ -216,11 +186,6 @@ class DiscordLogger {
         });
 
         await this.sendLog(embed, 'status');
-        statusLogger.info(`Channel event: ${action} for #${channel.name}`, {
-            channelId: channel.id,
-            action: action,
-            details: details
-        });
     }
 
     // Log status events
@@ -251,7 +216,6 @@ class DiscordLogger {
         });
 
         await this.sendLog(embed, 'status');
-        statusLogger.info(`Bot status: ${status}`, details);
     }
 
     // Log forbidden words detection
@@ -269,16 +233,6 @@ class DiscordLogger {
         );
 
         await this.sendLog(embed, 'forbiddenWords');
-        
-        // Log to specific file
-        forbiddenWordsLogger.info(`Forbidden word ${action}: "${forbiddenWord}" by ${message.author.tag} in #${message.channel.name}`, {
-            messageId: message.id,
-            authorId: message.author.id,
-            channelId: message.channel.id,
-            forbiddenWord: forbiddenWord,
-            content: message.content?.substring(0, 100) + (message.content?.length > 100 ? '...' : ''),
-            action: action
-        });
     }
 }
 

@@ -80,7 +80,7 @@ logTypes.forEach(type => {
     }
 });
 
-// Create Winston logger
+// Create Winston logger (main logger with console output)
 const logger = winston.createLogger({
     level: config.logLevel,
     format: logFormat,
@@ -112,7 +112,7 @@ if (config.webhookUrl) {
     }));
 }
 
-// Create specific loggers for each type
+// Create specific loggers for each type (FILE ONLY - NO CONSOLE)
 const messageLogger = winston.createLogger({
     level: config.logLevel,
     format: logFormat,
@@ -123,7 +123,9 @@ const messageLogger = winston.createLogger({
             maxFiles: 30,
             tailable: true
         })
-    ]
+    ],
+    // Disable console output for specific loggers
+    silent: false
 });
 
 const moderationLogger = winston.createLogger({
@@ -136,7 +138,9 @@ const moderationLogger = winston.createLogger({
             maxFiles: 30,
             tailable: true
         })
-    ]
+    ],
+    // Disable console output for specific loggers
+    silent: false
 });
 
 const statusLogger = winston.createLogger({
@@ -149,7 +153,9 @@ const statusLogger = winston.createLogger({
             maxFiles: 30,
             tailable: true
         })
-    ]
+    ],
+    // Disable console output for specific loggers
+    silent: false
 });
 
 const forbiddenWordsLogger = winston.createLogger({
@@ -162,7 +168,9 @@ const forbiddenWordsLogger = winston.createLogger({
             maxFiles: 30,
             tailable: true
         })
-    ]
+    ],
+    // Disable console output for specific loggers
+    silent: false
 });
 
 const errorLogger = winston.createLogger({
@@ -175,7 +183,9 @@ const errorLogger = winston.createLogger({
             maxFiles: 30,
             tailable: true
         })
-    ]
+    ],
+    // Disable console output for specific loggers
+    silent: false
 });
 
 // Export specific logging functions
@@ -185,6 +195,5 @@ module.exports = {
     moderationLogger,
     statusLogger,
     forbiddenWordsLogger,
-    errorLogger,
-    DiscordLogger: require('./discordLogger')
+    errorLogger
 }; 

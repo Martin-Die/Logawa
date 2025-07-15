@@ -51,15 +51,12 @@ class MessageEvents {
 
             await this.discordLogger.logMessage(message, 'sent');
             
-            messageLogger.info('Message created', {
+            // Log to specific file
+            messageLogger.info(`Message sent: ${message.author.tag} in #${message.channel.name}`, {
                 messageId: message.id,
                 authorId: message.author.id,
-                authorTag: message.author.tag,
                 channelId: message.channel.id,
-                channelName: message.channel.name,
                 content: message.content?.substring(0, 200),
-                attachments: message.attachments.size,
-                embeds: message.embeds.length,
                 forbiddenWord: forbiddenWord || null
             });
         } catch (error) {
@@ -89,12 +86,11 @@ class MessageEvents {
 
             await this.discordLogger.sendLog(embed, 'messages');
             
-            messageLogger.info('Message edited', {
+            // Log to specific file
+            messageLogger.info(`Message edited: ${newMessage.author.tag} in #${newMessage.channel.name}`, {
                 messageId: newMessage.id,
                 authorId: newMessage.author.id,
-                authorTag: newMessage.author.tag,
                 channelId: newMessage.channel.id,
-                channelName: newMessage.channel.name,
                 oldContent: oldMessage.content?.substring(0, 200),
                 newContent: newMessage.content?.substring(0, 200)
             });
@@ -121,12 +117,11 @@ class MessageEvents {
 
             await this.discordLogger.sendLog(embed, 'moderation');
             
-            messageLogger.info('Message deleted', {
+            // Log to specific file
+            messageLogger.info(`Message deleted: ${message.author.tag} in #${message.channel.name}`, {
                 messageId: message.id,
                 authorId: message.author.id,
-                authorTag: message.author.tag,
                 channelId: message.channel.id,
-                channelName: message.channel.name,
                 content: message.content?.substring(0, 200)
             });
         } catch (error) {
@@ -166,7 +161,8 @@ class MessageEvents {
 
             await this.discordLogger.sendLog(embed, 'moderation');
             
-            messageLogger.info('Bulk messages deleted', {
+            // Log to specific file
+            messageLogger.info(`Bulk messages deleted: ${validMessages.length} messages in #${validMessages[0].channel.name}`, {
                 count: validMessages.length,
                 channelId: validMessages[0].channel.id,
                 channelName: validMessages[0].channel.name,
@@ -195,10 +191,10 @@ class MessageEvents {
 
             await this.discordLogger.sendLog(embed, 'messages');
             
-            messageLogger.info('Reaction added', {
+            // Log to specific file
+            messageLogger.info(`Reaction added: ${user.tag} on message by ${reaction.message.author.tag}`, {
                 emoji: reaction.emoji.toString(),
                 userId: user.id,
-                userTag: user.tag,
                 messageId: reaction.message.id,
                 channelId: reaction.message.channel.id,
                 channelName: reaction.message.channel.name
@@ -226,10 +222,10 @@ class MessageEvents {
 
             await this.discordLogger.sendLog(embed, 'messages');
             
-            messageLogger.info('Reaction removed', {
+            // Log to specific file
+            messageLogger.info(`Reaction removed: ${user.tag} on message by ${reaction.message.author.tag}`, {
                 emoji: reaction.emoji.toString(),
                 userId: user.id,
-                userTag: user.tag,
                 messageId: reaction.message.id,
                 channelId: reaction.message.channel.id,
                 channelName: reaction.message.channel.name

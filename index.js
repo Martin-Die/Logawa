@@ -1,5 +1,6 @@
 const { Client, GatewayIntentBits, Partials } = require('discord.js');
-const { logger, DiscordLogger } = require('./utils/logger');
+const { logger } = require('./utils/logger');
+const DiscordLogger = require('./utils/discordLogger');
 const MessageEvents = require('./events/messageEvents');
 const ModerationEvents = require('./events/moderationEvents');
 const ServerEvents = require('./events/serverEvents');
@@ -253,12 +254,6 @@ class LogawaLoggerBot {
             );
 
             await this.discordLogger.sendLog(embed, 'status');
-
-            // Log to specific file
-            this.discordLogger.logToFile('status', 'Bot shutting down', {
-                shutdownTime: new Date().toISOString(),
-                reason: 'Graceful shutdown'
-            });
 
             // Wait a bit for the message to be sent
             await new Promise(resolve => setTimeout(resolve, 1000));

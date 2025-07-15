@@ -1,4 +1,4 @@
-const { logger } = require('../utils/logger');
+const { errorLogger } = require('../utils/logger');
 
 class ModerationEvents {
     constructor(client, discordLogger) {
@@ -20,7 +20,7 @@ class ModerationEvents {
             }
             return null;
         } catch (error) {
-            logger.error('Error fetching audit logs:', error);
+            errorLogger.error('Error fetching audit logs:', error);
             return null;
         }
     }
@@ -45,27 +45,12 @@ class ModerationEvents {
                     'kick',
                     reason
                 );
-
-                logger.info('Member kicked', {
-                    userId: member.user.id,
-                    userTag: member.user.tag,
-                    moderatorId: moderator.id,
-                    moderatorTag: moderator.tag,
-                    reason: reason,
-                    guildId: member.guild.id
-                });
             } else {
                 // Member left voluntarily
                 await this.discordLogger.logMemberEvent(member, 'leave');
-                
-                logger.info('Member left', {
-                    userId: member.user.id,
-                    userTag: member.user.tag,
-                    guildId: member.guild.id
-                });
             }
         } catch (error) {
-            logger.error('Error handling member remove event:', error);
+            errorLogger.error('Error handling member remove event:', error);
         }
     }
 
@@ -88,18 +73,9 @@ class ModerationEvents {
                     'ban',
                     reason
                 );
-
-                logger.info('Member banned', {
-                    userId: ban.user.id,
-                    userTag: ban.user.tag,
-                    moderatorId: moderator.id,
-                    moderatorTag: moderator.tag,
-                    reason: reason,
-                    guildId: ban.guild.id
-                });
             }
         } catch (error) {
-            logger.error('Error handling ban add event:', error);
+            errorLogger.error('Error handling ban add event:', error);
         }
     }
 
@@ -122,18 +98,9 @@ class ModerationEvents {
                     'unban',
                     reason
                 );
-
-                logger.info('Member unbanned', {
-                    userId: ban.user.id,
-                    userTag: ban.user.tag,
-                    moderatorId: moderator.id,
-                    moderatorTag: moderator.tag,
-                    reason: reason,
-                    guildId: ban.guild.id
-                });
             }
         } catch (error) {
-            logger.error('Error handling ban remove event:', error);
+            errorLogger.error('Error handling ban remove event:', error);
         }
     }
 
@@ -176,16 +143,6 @@ class ModerationEvents {
                         reason,
                         duration
                     );
-
-                    logger.info(`Member ${action}`, {
-                        userId: newMember.user.id,
-                        userTag: newMember.user.tag,
-                        moderatorId: moderator.id,
-                        moderatorTag: moderator.tag,
-                        reason: reason,
-                        duration: duration,
-                        guildId: newMember.guild.id
-                    });
                 }
             }
 
@@ -213,7 +170,7 @@ class ModerationEvents {
                             moderator,
                             'role_add',
                             reason,
-                            addedRoles.map(role => role.name).join(', ')
+                            `Added: ${addedRoles.map(r => r.name).join(', ')}`
                         );
                     }
 
@@ -223,96 +180,31 @@ class ModerationEvents {
                             moderator,
                             'role_remove',
                             reason,
-                            removedRoles.map(role => role.name).join(', ')
+                            `Removed: ${removedRoles.map(r => r.name).join(', ')}`
                         );
                     }
-
-                    logger.info('Member roles updated', {
-                        userId: newMember.user.id,
-                        userTag: newMember.user.tag,
-                        moderatorId: moderator.id,
-                        moderatorTag: moderator.tag,
-                        addedRoles: addedRoles.map(role => role.name),
-                        removedRoles: removedRoles.map(role => role.name),
-                        reason: reason,
-                        guildId: newMember.guild.id
-                    });
-                }
-            }
-
-            // Check for nickname changes
-            if (oldMember.nickname !== newMember.nickname) {
-                const nicknameLog = await newMember.guild.fetchAuditLogs({
-                    type: 'MEMBER_UPDATE',
-                    limit: 5
-                });
-
-                const nicknameEntry = nicknameLog.entries.find(entry => 
-                    entry.target.id === newMember.user.id &&
-                    entry.changes?.some(change => change.key === 'nick')
-                );
-
-                if (nicknameEntry) {
-                    const moderator = nicknameEntry.executor;
-                    const change = nicknameEntry.changes.find(c => c.key === 'nick');
-
-                    const embed = this.discordLogger.createEmbed(
-                        'Nickname Changed',
-                        `**Member:** ${newMember.user.tag} (${newMember.user.id})\n**Moderator:** ${moderator.tag} (${moderator.id})`,
-                        0x0099ff,
-                        [
-                            { name: 'Before', value: change.oldValue || 'No nickname', inline: true },
-                            { name: 'After', value: change.newValue || 'No nickname', inline: true },
-                            { name: 'Changed At', value: new Date().toISOString(), inline: true }
-                        ]
-                    );
-
-                    await this.discordLogger.sendLog(embed);
-
-                    logger.info('Member nickname changed', {
-                        userId: newMember.user.id,
-                        userTag: newMember.user.tag,
-                        moderatorId: moderator.id,
-                        moderatorTag: moderator.tag,
-                        oldNickname: change.oldValue,
-                        newNickname: change.newValue,
-                        guildId: newMember.guild.id
-                    });
                 }
             }
         } catch (error) {
-            logger.error('Error handling member update event:', error);
+            errorLogger.error('Error handling member update event:', error);
         }
     }
 
     // Member joined event
     async handleGuildMemberAdd(member) {
         try {
-            await this.discordLogger.logMemberEvent(member, 'join', {
-                'Account Created': new Date(member.user.createdTimestamp).toISOString(),
-                'Joined At': new Date().toISOString()
-            });
-
-            logger.info('Member joined', {
-                userId: member.user.id,
-                userTag: member.user.tag,
-                accountCreated: new Date(member.user.createdTimestamp).toISOString(),
-                guildId: member.guild.id
-            });
+            await this.discordLogger.logMemberEvent(member, 'join');
         } catch (error) {
-            logger.error('Error handling member add event:', error);
+            errorLogger.error('Error handling member add event:', error);
         }
     }
 
-    // Register all moderation event handlers
     registerEvents() {
         this.client.on('guildMemberAdd', this.handleGuildMemberAdd.bind(this));
         this.client.on('guildMemberRemove', this.handleGuildMemberRemove.bind(this));
         this.client.on('guildMemberUpdate', this.handleGuildMemberUpdate.bind(this));
         this.client.on('guildBanAdd', this.handleGuildBanAdd.bind(this));
         this.client.on('guildBanRemove', this.handleGuildBanRemove.bind(this));
-        
-        logger.info('Moderation events registered successfully');
     }
 }
 
