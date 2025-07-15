@@ -9,46 +9,17 @@ param(
 
 Write-Host "🚀 Déploiement vers Raspberry Pi..." -ForegroundColor Green
 
-# 1. Copier les fichiers modifiés
-Write-Host "📁 Copie des fichiers..." -ForegroundColor Yellow
-$excludeFiles = @(
-    "node_modules",
-    ".git",
-    "logs",
-    "backups",
-    "*.log"
-)
-
-$excludeParams = $excludeFiles | ForEach-Object { "--exclude=$_" }
-$excludeString = $excludeParams -join " "
-
-# Utiliser rsync si disponible, sinon scp
-try {
-    $rsyncOutput = rsync --version 2>$null
-    if ($LASTEXITCODE -eq 0) {
-        Write-Host "📤 Utilisation de rsync pour une copie optimisée..." -ForegroundColor Cyan
-        rsync -avz --delete $excludeString -e "ssh -i $SSHKey" ./ $User@${RaspberryIP}:~/Logawa/
-    } else {
-        throw "rsync non disponible"
-    }
-} catch {
-    Write-Host "📤 Utilisation de scp..." -ForegroundColor Cyan
-    # Créer un tar temporaire avec les fichiers exclus
-    $tempTar = "temp-deploy.tar"
-    tar --exclude='node_modules' --exclude='.git' --exclude='logs' --exclude='backups' --exclude='*.log' -cf $tempTar .
-    
-    # Copier le tar
-    scp -i $SSHKey $tempTar ${User}@${RaspberryIP}:~/
-    
-    # Extraire sur la Raspberry Pi
-    ssh -i $SSHKey ${User}@${RaspberryIP} "cd ~ && tar -xf $tempTar -C Logawa/ && rm $tempTar"
-    
-    # Nettoyer
-    Remove-Item $tempTar -ErrorAction SilentlyContinue
-}
+# 1. Mettre à jour le code avec git pull
+Write-Host "📥 Mise à jour du code avec git pull..." -ForegroundColor Yellow
+ssh -i $SSHKey ${User}@${RaspberryIP} @"
+cd ~/Logawa
+git stash
+git pull origin main
+git stash pop
+"@
 
 if ($LASTEXITCODE -ne 0) {
-    Write-Host "❌ Erreur lors de la copie des fichiers" -ForegroundColor Red
+    Write-Host "❌ Erreur lors de la mise à jour du code" -ForegroundColor Red
     exit 1
 }
 
