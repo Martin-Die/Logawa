@@ -1,57 +1,82 @@
-# Guide des Couleurs - Logawa Bot
+# Color Guide - Logawa Bot
 
-Ce guide présente toutes les détections du bot Logawa avec leurs couleurs, organisées par type de logs.
+This guide presents all Logawa bot detections with their colors, organized by log type.
 
 ## 📝 Messages (`messages/`)
 
-| Détection | Couleur | Code Hex |
-|-----------|---------|----------|
-| **Message envoyé** | 🟢 Vert | `#00ff00` |
-| **Message modifié** | 🔵 Bleu | `#4169e1` |
-| **Réaction ajoutée** | 🟢 Vert | `#00ff00` |
-| **Réaction supprimée** | 🟠 Orange | `#ffa500` |
+| Detection | Color | Hex Code |
+|-----------|-------|----------|
+| **Message sent** | 🟢 Green | `#00ff00` |
+| **Message edited** | 🔵 Blue | `#4169e1` |
+| **Reaction added** | 🟢 Green | `#00ff00` |
+| **Reaction removed** | 🟠 Orange | `#ffa500` |
 
-## ⚖️ Modération (`moderation/`)
+## ⚖️ Moderation (`moderation/`)
 
-| Détection | Couleur | Code Hex |
-|-----------|---------|----------|
-| **Message supprimé** | 🔴 Rouge | `#ff0000` |
-| **Messages supprimés en masse** | 🔴 Rouge | `#ff0000` |
-| **Membre kické** | 🟠 Orange | `#ffa500` |
-| **Membre banni** | 🔴 Rouge | `#ff0000` |
-| **Membre débanni** | 🟢 Vert | `#00ff00` |
-| **Timeout ajouté** | 🟡 Jaune | `#ffff00` |
-| **Timeout supprimé** | 🟡 Jaune | `#ffff00` |
-| **Rôles ajoutés** | 🟢 Vert | `#00ff00` |
-| **Rôles supprimés** | 🟠 Orange | `#ffa500` |
+| Detection | Color | Hex Code |
+|-----------|-------|----------|
+| **Message deleted** | 🔴 Red | `#ff0000` |
+| **Bulk messages deleted** | 🔴 Red | `#ff0000` |
+| **Member joined** | 🟢 Green | `#00ff00` |
+| **Member left** | 🟠 Orange | `#ffa500` |
+| **Member kicked** | 🟠 Orange | `#ffa500` |
+| **Member banned** | 🔴 Red | `#ff0000` |
+| **Member unbanned** | 🟢 Green | `#00ff00` |
+| **Timeout added** | 🟡 Yellow | `#ffff00` |
+| **Timeout removed** | 🟡 Yellow | `#ffff00` |
+| **Roles added** | 🟢 Green | `#00ff00` |
+| **Roles removed** | 🟠 Orange | `#ffa500` |
+| **Channel created** | 🟢 Green | `#00ff00` |
+| **Channel deleted** | 🔴 Red | `#ff0000` |
+| **Channel modified** | 🔵 Blue | `#0099ff` |
+| **Role created** | 🟢 Green | `#00ff00` |
+| **Role deleted** | 🔴 Red | `#ff0000` |
+| **Role modified** | 🟡 Yellow | `#ffff00` |
+| **Emoji created** | 🟢 Green | `#00ff00` |
+| **Emoji deleted** | 🔴 Red | `#ff0000` |
+| **Invite created** | 🟢 Green | `#00ff00` |
+| **Invite deleted** | 🔴 Red | `#ff0000` |
 
-## 🚫 Mots Interdits (`forbiddenWords/`)
+## 🚫 Forbidden Words (`forbiddenWords/`)
 
-| Détection | Couleur | Code Hex |
-|-----------|---------|----------|
-| **Mot interdit détecté** | 🔴 Rouge | `#ff0000` |
+| Detection | Color | Hex Code |
+|-----------|-------|----------|
+| **Forbidden word detected** | 🔴 Red | `#ff0000` |
 
-## ⚙️ Statut (`status/`)
+## ⚙️ Status (`status/`)
 
-| Détection | Couleur | Code Hex |
-|-----------|---------|----------|
-| **Membre rejoint** | 🟢 Vert | `#00ff00` |
-| **Membre parti** | 🟠 Orange | `#ffa500` |
-| **Canal créé** | 🔵 Bleu | `#0099ff` |
-| **Canal supprimé** | 🔵 Bleu | `#0099ff` |
-| **Canal modifié** | 🔵 Bleu | `#0099ff` |
-| **Rôle créé** | 🟢 Vert | `#00ff00` |
-| **Rôle supprimé** | 🔴 Rouge | `#ff0000` |
-| **Rôle modifié** | 🟡 Jaune | `#ffff00` |
-| **Emoji créé** | 🟢 Vert | `#00ff00` |
-| **Emoji supprimé** | 🔴 Rouge | `#ff0000` |
-| **Invitation créée** | 🟢 Vert | `#00ff00` |
-| **Invitation supprimée** | 🔴 Rouge | `#ff0000` |
-| **Bot démarré** | 🟢 Vert | `#00ff00` |
-| **Bot arrêté** | 🔴 Rouge | `#ff0000` |
-| **Erreur bot** | 🔴 Rouge | `#ff0000` |
-| **Avertissement bot** | 🟡 Jaune | `#ffff00` |
+| Detection | Color | Hex Code |
+|-----------|-------|----------|
+| **Bot started** | 🟢 Green | `#00ff00` |
+| **Bot stopped** | 🔴 Red | `#ff0000` |
+| **Bot error** | 🔴 Red | `#ff0000` |
+| **Bot warning** | 🟡 Yellow | `#ffff00` |
+| **Bot info** | 🔵 Blue | `#0099ff` |
+
+## 🌐 External Webhook
+
+| Level | Color | Hex Code |
+|-------|-------|----------|
+| **Error** | 🔴 Red | `#ff0000` |
+| **Warn** | 🟡 Yellow | `#ffff00` |
+| **Info** | 🟢 Green | `#00ff00` |
+| **Debug** | 🔵 Blue | `#0099ff` |
+
+## 📊 Auto Backup
+
+| Detection | Color | Hex Code |
+|-----------|-------|----------|
+| **Backup successful** | 🟢 Green | `#00ff00` |
+| **Backup error** | 🔴 Red | `#ff0000` |
 
 ---
 
-*Guide des couleurs Logawa - Janvier 2025* 
+### Color Legend
+
+- 🟢 **Green** (`#00ff00`) : Positive actions, creations, success
+- 🔴 **Red** (`#ff0000`) : Deletions, errors, critical actions
+- 🟠 **Orange** (`#ffa500`) : Neutral actions, departures, kicks
+- 🟡 **Yellow** (`#ffff00`) : Modifications, timeouts, warnings
+- 🔵 **Blue** (`#4169e1` / `#0099ff`) : Information, modifications, status
+
+*Logawa Color Guide - January 2025* 
