@@ -55,7 +55,23 @@ class ModerationEvents {
                 });
             } else {
                 // Member left voluntarily
-                await this.discordLogger.logMemberEvent(member, 'leave');
+                const embed = this.discordLogger.createEmbed(
+                    'Member Left',
+                    `**Member:** ${member.user.tag} (${member.user.id})`,
+                    0xffa500,
+                    [
+                        { name: 'Left At', value: new Date().toISOString(), inline: true }
+                    ]
+                );
+
+                await this.discordLogger.sendLog(embed, 'moderation');
+
+                // Log to specific file
+                moderationLogger.info(`Member left: ${member.user.tag}`, {
+                    userId: member.user.id,
+                    guildId: member.guild.id,
+                    leftAt: new Date().toISOString()
+                });
             }
         } catch (error) {
             errorLogger.error('Error handling member remove event:', error);
@@ -244,7 +260,25 @@ class ModerationEvents {
     // Member joined event
     async handleGuildMemberAdd(member) {
         try {
-            await this.discordLogger.logMemberEvent(member, 'join');
+            const embed = this.discordLogger.createEmbed(
+                'Member Joined',
+                `**Member:** ${member.user.tag} (${member.user.id})`,
+                0x00ff00,
+                [
+                    { name: 'Account Created', value: new Date(member.user.createdTimestamp).toISOString(), inline: true },
+                    { name: 'Joined At', value: new Date().toISOString(), inline: true }
+                ]
+            );
+
+            await this.discordLogger.sendLog(embed, 'moderation');
+
+            // Log to specific file
+            moderationLogger.info(`Member joined: ${member.user.tag}`, {
+                userId: member.user.id,
+                guildId: member.guild.id,
+                joinedAt: new Date().toISOString(),
+                accountCreatedAt: new Date(member.user.createdTimestamp).toISOString()
+            });
         } catch (error) {
             errorLogger.error('Error handling member add event:', error);
         }

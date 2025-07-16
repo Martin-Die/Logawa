@@ -1,4 +1,4 @@
-const { statusLogger, errorLogger } = require('../utils/logger');
+const { statusLogger, moderationLogger, errorLogger } = require('../utils/logger');
 
 class ServerEvents {
     constructor(client, discordLogger) {
@@ -9,12 +9,20 @@ class ServerEvents {
     // Channel created event
     async handleChannelCreate(channel) {
         try {
-            await this.discordLogger.logChannelEvent(channel, 'created', {
-                'Channel Type': channel.type,
-                'Created By': 'System'
-            });
+            const embed = this.discordLogger.createEmbed(
+                'Channel Created',
+                `**Channel:** ${channel.name} (${channel.id})`,
+                0x00ff00,
+                [
+                    { name: 'Type', value: channel.type, inline: true },
+                    { name: 'Created By', value: 'System', inline: true },
+                    { name: 'Created At', value: new Date().toISOString(), inline: true }
+                ]
+            );
 
-            statusLogger.info('Channel created', {
+            await this.discordLogger.sendLog(embed, 'moderation');
+
+            moderationLogger.info('Channel created', {
                 channelId: channel.id,
                 channelName: channel.name,
                 channelType: channel.type,
@@ -28,12 +36,20 @@ class ServerEvents {
     // Channel deleted event
     async handleChannelDelete(channel) {
         try {
-            await this.discordLogger.logChannelEvent(channel, 'deleted', {
-                'Channel Type': channel.type,
-                'Deleted By': 'System'
-            });
+            const embed = this.discordLogger.createEmbed(
+                'Channel Deleted',
+                `**Channel:** ${channel.name} (${channel.id})`,
+                0xff0000,
+                [
+                    { name: 'Type', value: channel.type, inline: true },
+                    { name: 'Deleted By', value: 'System', inline: true },
+                    { name: 'Deleted At', value: new Date().toISOString(), inline: true }
+                ]
+            );
 
-            statusLogger.info('Channel deleted', {
+            await this.discordLogger.sendLog(embed, 'moderation');
+
+            moderationLogger.info('Channel deleted', {
                 channelId: channel.id,
                 channelName: channel.name,
                 channelType: channel.type,
@@ -65,12 +81,20 @@ class ServerEvents {
             }
 
             if (changes.length > 0) {
-                await this.discordLogger.logChannelEvent(newChannel, 'updated', {
-                    'Changes': changes.join('\n'),
-                    'Updated By': 'System'
-                });
+                const embed = this.discordLogger.createEmbed(
+                    'Channel Updated',
+                    `**Channel:** ${newChannel.name} (${newChannel.id})`,
+                    0xffff00,
+                    [
+                        { name: 'Changes', value: changes.join('\n'), inline: false },
+                        { name: 'Updated By', value: 'System', inline: true },
+                        { name: 'Updated At', value: new Date().toISOString(), inline: true }
+                    ]
+                );
 
-                statusLogger.info('Channel updated', {
+                await this.discordLogger.sendLog(embed, 'moderation');
+
+                moderationLogger.info('Channel updated', {
                     channelId: newChannel.id,
                     channelName: newChannel.name,
                     changes: changes,
@@ -98,9 +122,9 @@ class ServerEvents {
                 ]
             );
 
-            await this.discordLogger.sendLog(embed, 'status');
+            await this.discordLogger.sendLog(embed, 'moderation');
 
-            statusLogger.info('Role created', {
+            moderationLogger.info('Role created', {
                 roleId: role.id,
                 roleName: role.name,
                 color: role.hexColor,
@@ -126,9 +150,9 @@ class ServerEvents {
                 ]
             );
 
-            await this.discordLogger.sendLog(embed, 'status');
+            await this.discordLogger.sendLog(embed, 'moderation');
 
-            statusLogger.info('Role deleted', {
+            moderationLogger.info('Role deleted', {
                 roleId: role.id,
                 roleName: role.name,
                 color: role.hexColor,
@@ -180,9 +204,9 @@ class ServerEvents {
                     ]
                 );
 
-                await this.discordLogger.sendLog(embed, 'status');
+                await this.discordLogger.sendLog(embed, 'moderation');
 
-                statusLogger.info('Role updated', {
+                moderationLogger.info('Role updated', {
                     roleId: newRole.id,
                     roleName: newRole.name,
                     changes: changes,
@@ -208,9 +232,9 @@ class ServerEvents {
                 ]
             );
 
-            await this.discordLogger.sendLog(embed, 'status');
+            await this.discordLogger.sendLog(embed, 'moderation');
 
-            statusLogger.info('Emoji created', {
+            moderationLogger.info('Emoji created', {
                 emojiId: emoji.id,
                 emojiName: emoji.name,
                 animated: emoji.animated,
@@ -234,9 +258,9 @@ class ServerEvents {
                 ]
             );
 
-            await this.discordLogger.sendLog(embed, 'status');
+            await this.discordLogger.sendLog(embed, 'moderation');
 
-            statusLogger.info('Emoji deleted', {
+            moderationLogger.info('Emoji deleted', {
                 emojiId: emoji.id,
                 emojiName: emoji.name,
                 animated: emoji.animated,
@@ -262,9 +286,9 @@ class ServerEvents {
                 ]
             );
 
-            await this.discordLogger.sendLog(embed, 'status');
+            await this.discordLogger.sendLog(embed, 'moderation');
 
-            statusLogger.info('Invite created', {
+            moderationLogger.info('Invite created', {
                 inviteCode: invite.code,
                 channelId: invite.channel.id,
                 channelName: invite.channel.name,
@@ -291,9 +315,9 @@ class ServerEvents {
                 ]
             );
 
-            await this.discordLogger.sendLog(embed, 'status');
+            await this.discordLogger.sendLog(embed, 'moderation');
 
-            statusLogger.info('Invite deleted', {
+            moderationLogger.info('Invite deleted', {
                 inviteCode: invite.code,
                 channelId: invite.channel.id,
                 channelName: invite.channel.name,
