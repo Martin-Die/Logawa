@@ -7,7 +7,17 @@ param(
     [string]$User = "martynx"
 )
 
+# Demander le port SSH au lancement
+$SSHPort = Read-Host "Entrez le port SSH de votre Raspberry Pi (defaut: 22)"
+if ($SSHPort -eq "") {
+    $SSHPort = 22
+} else {
+    $SSHPort = [int]$SSHPort
+}
+
 Write-Host "Configuration des dossiers de stockage..." -ForegroundColor Green
+Write-Host "Utilisation du port SSH: $SSHPort" -ForegroundColor Yellow
+Write-Host ""
 
 # Demander les chemins
 $logsPath = Read-Host "Chemin pour les logs (defaut: /home/$User/logawa-logs)"
@@ -35,9 +45,9 @@ if ($backupsPath -ne "") {
 # Creer les dossiers sur la Raspberry Pi
 Write-Host "Creation des dossiers..." -ForegroundColor Yellow
 if ($backupsPath -ne "") {
-    ssh -i $SSHKey ${User}@${RaspberryIP} "mkdir -p '$logsPath' '$backupsPath' && chmod 755 '$logsPath' '$backupsPath' && ls -la '$logsPath' '$backupsPath'"
+    ssh -i $SSHKey -p $SSHPort ${User}@${RaspberryIP} "mkdir -p '$logsPath' '$backupsPath' && chmod 755 '$logsPath' '$backupsPath' && ls -la '$logsPath' '$backupsPath'"
 } else {
-    ssh -i $SSHKey ${User}@${RaspberryIP} "mkdir -p '$logsPath' && chmod 755 '$logsPath' && ls -la '$logsPath'"
+    ssh -i $SSHKey -p $SSHPort ${User}@${RaspberryIP} "mkdir -p '$logsPath' && chmod 755 '$logsPath' && ls -la '$logsPath'"
 }
 
 if ($LASTEXITCODE -ne 0) {
