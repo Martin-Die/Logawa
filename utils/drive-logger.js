@@ -66,7 +66,7 @@ class GoogleDriveLogger {
             const oauth2Client = new google.auth.OAuth2(
                 credentials.installed.client_id,
                 credentials.installed.client_secret,
-                credentials.installed.redirect_uris[0]
+                'http://localhost:8080/callback'
             );
 
             // Vérifier si on a déjà un refresh token
@@ -139,7 +139,7 @@ class GoogleDriveLogger {
             const oauth2Client = new google.auth.OAuth2(
                 credentials.installed.client_id,
                 credentials.installed.client_secret,
-                credentials.installed.redirect_uris[0]
+                'http://localhost:8080/callback'
             );
 
             // Échanger le code contre un token
