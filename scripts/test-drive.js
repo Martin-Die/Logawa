@@ -44,6 +44,23 @@ async function testGoogleDrive() {
     try {
         await driveLogger.initialize();
         console.log('✅ Initialisation réussie');
+        
+        // Afficher l'URL d'authentification si nécessaire
+        if (driveLogger.drive) {
+            const { google } = require('googleapis');
+            const credentials = JSON.parse(fs.readFileSync(driveLogger.credentialsPath, 'utf8'));
+            const oauth2Client = new google.auth.OAuth2(
+                credentials.installed.client_id,
+                credentials.installed.client_secret,
+                credentials.installed.redirect_uris[0]
+            );
+            
+            console.log('🔗 URL d\'authentification complète:');
+            console.log(oauth2Client.generateAuthUrl({
+                access_type: 'offline',
+                scope: ['https://www.googleapis.com/auth/drive.file']
+            }));
+        }
     } catch (error) {
         console.log('❌ Erreur d\'initialisation:', error.message);
         console.log('🔍 Détails:', error);
@@ -74,6 +91,15 @@ async function testGoogleDrive() {
         } catch (error) {
             console.log('❌ Erreur d\'upload:', error.message);
             console.log('🔍 Détails:', error);
+            
+            // Si l'erreur indique un problème d'authentification, proposer l'échange de code
+            if (error.message.includes('No access, refresh token') || error.message.includes('unauthorized')) {
+                console.log('\n💡 Pour résoudre ce problème d\'authentification:');
+                console.log('1. Visitez l\'URL d\'authentification affichée ci-dessus');
+                console.log('2. Autorisez l\'application');
+                console.log('3. Copiez le code d\'autorisation depuis l\'URL de redirection');
+                console.log('4. Utilisez: node scripts/exchange-token.js <code>');
+            }
         }
         console.log('');
 

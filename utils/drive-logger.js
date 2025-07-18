@@ -63,12 +63,27 @@ class GoogleDriveLogger {
             }
 
             // Créer l'authentification OAuth2 avec les credentials directs
-            const oauth2Client = new google.auth.OAuth2();
-            oauth2Client.setCredentials({
-                client_id: credentials.installed.client_id,
-                client_secret: credentials.installed.client_secret,
-                redirect_uri: credentials.installed.redirect_uris[0]
-            });
+            const oauth2Client = new google.auth.OAuth2(
+                credentials.installed.client_id,
+                credentials.installed.client_secret,
+                credentials.installed.redirect_uris[0]
+            );
+
+            // Vérifier si on a déjà un refresh token
+            if (credentials.refresh_token) {
+                oauth2Client.setCredentials({
+                    refresh_token: credentials.refresh_token
+                });
+                console.log('✅ Refresh token trouvé, authentification configurée');
+            } else {
+                console.log('⚠️ Aucun refresh token trouvé');
+                console.log('🔗 URL d\'authentification:');
+                console.log(oauth2Client.generateAuthUrl({
+                    access_type: 'offline',
+                    scope: ['https://www.googleapis.com/auth/drive.file']
+                }));
+                console.log('💡 Visitez cette URL, autorisez l\'application, puis utilisez la méthode exchangeCodeForToken()');
+            }
 
             // Créer le client Drive avec l'authentification OAuth2
             this.drive = google.drive({ 
@@ -77,15 +92,51 @@ class GoogleDriveLogger {
             });
             
             console.log('✅ API Google Drive initialisée (OAuth2)');
-            console.log('⚠️ Authentification requise - URL d\'authentification:');
-            console.log(oauth2Client.generateAuthUrl({
-                access_type: 'offline',
-                scope: ['https://www.googleapis.com/auth/drive.file']
-            }));
 
         } catch (error) {
             console.error('❌ Erreur lors de l\'initialisation de l\'API Google Drive:', error.message);
             throw error;
+        }
+    }
+
+    // Échanger un code d'autorisation contre un refresh token
+    async exchangeCodeForToken(authorizationCode) {
+        try {
+            const { google } = require('googleapis');
+            
+            // Lire le fichier de credentials
+            const credentials = JSON.parse(fs.readFileSync(this.credentialsPath, 'utf8'));
+            
+            // Créer l'authentification OAuth2
+            const oauth2Client = new google.auth.OAuth2(
+                credentials.installed.client_id,
+                credentials.installed.client_secret,
+                credentials.installed.redirect_uris[0]
+            );
+
+            // Échanger le code contre un token
+            const { tokens } = await oauth2Client.getToken(authorizationCode);
+            
+            if (tokens.refresh_token) {
+                // Ajouter le refresh token au fichier JSON
+                credentials.refresh_token = tokens.refresh_token;
+                fs.writeFileSync(this.credentialsPath, JSON.stringify(credentials, null, 2));
+                
+                console.log('✅ Refresh token obtenu et sauvegardé');
+                console.log('🔄 Redémarrage de l\'authentification...');
+                
+                // Réinitialiser l'authentification
+                await this.initializeDriveAPI();
+                
+                return true;
+            } else {
+                console.log('❌ Aucun refresh token reçu');
+                return false;
+            }
+            
+        } catch (error) {
+            console.error('❌ Erreur lors de l\'échange du code:', error.message);
+            return false;
         }
     }
 
