@@ -25,8 +25,9 @@ async function testGoogleDrive() {
             if (credentials.installed) {
                 console.log('🔑 Client ID:', credentials.installed.client_id.substring(0, 20) + '...');
                 console.log('🔒 Client Secret:', credentials.installed.client_secret ? 'Présent' : 'Manquant');
-            } else if (credentials.client_email) {
-                console.log('📧 Service Account:', credentials.client_email);
+                console.log('📄 Type: OAuth2');
+            } else {
+                console.log('❌ Format de credentials non reconnu - Section "installed" manquante');
             }
         } catch (error) {
             console.log('❌ Fichier JSON invalide:', error.message);
