@@ -99,6 +99,34 @@ class GoogleDriveLogger {
         }
     }
 
+    // Gérer automatiquement les erreurs d'authentification
+    async handleAuthError(error) {
+        if (error.message.includes('invalid_grant') || error.message.includes('unauthorized')) {
+            console.log('🔄 Refresh token invalide, suppression et nouvelle authentification requise...');
+            
+            try {
+                // Lire le fichier de credentials
+                const credentials = JSON.parse(fs.readFileSync(this.credentialsPath, 'utf8'));
+                
+                // Supprimer le refresh token invalide
+                delete credentials.refresh_token;
+                fs.writeFileSync(this.credentialsPath, JSON.stringify(credentials, null, 2));
+                
+                console.log('✅ Refresh token invalide supprimé');
+                console.log('🔄 Redémarrage de l\'authentification...');
+                
+                // Réinitialiser l'authentification
+                await this.initializeDriveAPI();
+                
+                return true;
+            } catch (cleanupError) {
+                console.error('❌ Erreur lors du nettoyage du refresh token:', cleanupError.message);
+                return false;
+            }
+        }
+        return false;
+    }
+
     // Échanger un code d'autorisation contre un refresh token
     async exchangeCodeForToken(authorizationCode) {
         try {
@@ -175,6 +203,18 @@ class GoogleDriveLogger {
 
         } catch (error) {
             console.error('❌ Erreur lors du traitement de la queue Google Drive:', error);
+            
+            // Gérer automatiquement les erreurs d'authentification
+            const authHandled = await this.handleAuthError(error);
+            if (authHandled) {
+                console.log('🔄 Réessayer l\'upload après correction de l\'authentification...');
+                // Réessayer l'upload après un délai
+                setTimeout(() => {
+                    this.isUploading = false;
+                    this.processUploadQueue();
+                }, 5000);
+                return;
+            }
         } finally {
             this.isUploading = false;
         }
