@@ -12,6 +12,7 @@ if (!fs.existsSync(config.logFile.directory)) {
 
 // Initialize Google Drive Logger
 const driveLogger = new GoogleDriveLogger();
+console.log('🔧 GoogleDriveLogger créé:', driveLogger.getStatus());
 
 // Custom format for readable logs
 const logFormat = winston.format.combine(
@@ -84,7 +85,10 @@ class GoogleDriveTransport extends winston.Transport {
     }
 
     async log(info, callback) {
+        console.log(`🔧 GoogleDriveTransport.log appelé pour ${this.logType}:`, info.message.substring(0, 50) + '...');
+        
         if (!this.driveLogger || !this.driveLogger.enabled) {
+            console.log(`❌ GoogleDriveTransport désactivé pour ${this.logType}`);
             callback();
             return;
         }
@@ -97,6 +101,7 @@ class GoogleDriveTransport extends winston.Transport {
             const date = moment().format('YYYY-MM-DD');
             const fileName = `${this.logType}_${date}.log`;
             
+            console.log(`📤 Ajout à la queue Google Drive: ${fileName}`);
             // Add to Google Drive queue
             await this.driveLogger.queueFileUpload(fileName, logEntry);
         } catch (error) {
