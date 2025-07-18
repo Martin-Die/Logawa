@@ -3,11 +3,15 @@ const fs = require('fs');
 const path = require('path');
 const moment = require('moment');
 const config = require('../config');
+const GoogleDriveLogger = require('./drive-logger');
 
 // Ensure logs directory exists
 if (!fs.existsSync(config.logFile.directory)) {
     fs.mkdirSync(config.logFile.directory, { recursive: true });
 }
+
+// Initialize Google Drive Logger
+const driveLogger = new GoogleDriveLogger();
 
 // Custom format for readable logs
 const logFormat = winston.format.combine(
@@ -71,6 +75,38 @@ class WebhookTransport extends winston.Transport {
     }
 }
 
+// Google Drive transport for log files
+class GoogleDriveTransport extends winston.Transport {
+    constructor(opts) {
+        super(opts);
+        this.driveLogger = opts.driveLogger;
+        this.logType = opts.logType || 'general';
+    }
+
+    async log(info, callback) {
+        if (!this.driveLogger || !this.driveLogger.enabled) {
+            callback();
+            return;
+        }
+
+        try {
+            const timestamp = moment().format('YYYY-MM-DD HH:mm:ss');
+            const logEntry = `[${timestamp}] [${info.level.toUpperCase()}] ${info.message}`;
+            
+            // Create log file name based on type and date
+            const date = moment().format('YYYY-MM-DD');
+            const fileName = `${this.logType}_${date}.log`;
+            
+            // Add to Google Drive queue
+            await this.driveLogger.queueFileUpload(fileName, logEntry);
+        } catch (error) {
+            console.error('Google Drive logging failed:', error);
+        }
+
+        callback();
+    }
+}
+
 // Create subdirectories for different log types
 const logTypes = ['messages', 'moderation', 'status', 'forbiddenWords', 'errors'];
 logTypes.forEach(type => {
@@ -122,6 +158,10 @@ const messageLogger = winston.createLogger({
             maxsize: 10 * 1024 * 1024,
             maxFiles: 30,
             tailable: true
+        }),
+        new GoogleDriveTransport({
+            driveLogger: driveLogger,
+            logType: 'messages'
         })
     ],
     // Disable console output for specific loggers
@@ -137,6 +177,10 @@ const moderationLogger = winston.createLogger({
             maxsize: 10 * 1024 * 1024,
             maxFiles: 30,
             tailable: true
+        }),
+        new GoogleDriveTransport({
+            driveLogger: driveLogger,
+            logType: 'moderation'
         })
     ],
     // Disable console output for specific loggers
@@ -152,6 +196,10 @@ const statusLogger = winston.createLogger({
             maxsize: 10 * 1024 * 1024,
             maxFiles: 30,
             tailable: true
+        }),
+        new GoogleDriveTransport({
+            driveLogger: driveLogger,
+            logType: 'status'
         })
     ],
     // Disable console output for specific loggers
@@ -167,6 +215,10 @@ const forbiddenWordsLogger = winston.createLogger({
             maxsize: 10 * 1024 * 1024,
             maxFiles: 30,
             tailable: true
+        }),
+        new GoogleDriveTransport({
+            driveLogger: driveLogger,
+            logType: 'forbiddenWords'
         })
     ],
     // Disable console output for specific loggers
@@ -182,6 +234,10 @@ const errorLogger = winston.createLogger({
             maxsize: 10 * 1024 * 1024,
             maxFiles: 30,
             tailable: true
+        }),
+        new GoogleDriveTransport({
+            driveLogger: driveLogger,
+            logType: 'errors'
         })
     ],
     // Disable console output for specific loggers
@@ -195,5 +251,6 @@ module.exports = {
     moderationLogger,
     statusLogger,
     forbiddenWordsLogger,
-    errorLogger
+    errorLogger,
+    driveLogger
 }; 
