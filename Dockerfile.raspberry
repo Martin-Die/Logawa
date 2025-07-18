@@ -1,0 +1,22 @@
+FROM node:18-alpine
+
+# Créer le répertoire de travail
+WORKDIR /app
+
+# Copier les fichiers de dépendances
+COPY package*.json ./
+
+# Installer les dépendances
+RUN npm ci --only=production
+
+# Copier le code source
+COPY . .
+
+# Créer les répertoires nécessaires
+RUN mkdir -p logs backups
+
+# Exposer le port (si nécessaire)
+EXPOSE 3000
+
+# Commande de démarrage
+CMD ["node", "index.js"] 
