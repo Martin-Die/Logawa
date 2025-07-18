@@ -1,5 +1,6 @@
 require('dotenv').config();
 const GoogleDriveLogger = require('../utils/drive-logger');
+const fs = require('fs');
 
 async function testGoogleDrive() {
     console.log('🧪 Test du logger Google Drive\n');
@@ -14,34 +15,81 @@ async function testGoogleDrive() {
     });
     console.log('');
 
+    // Vérifier le fichier de credentials
+    console.log('🔍 Vérification du fichier de credentials...');
+    if (fs.existsSync(driveLogger.credentialsPath)) {
+        try {
+            const credentials = JSON.parse(fs.readFileSync(driveLogger.credentialsPath, 'utf8'));
+            console.log('✅ Fichier JSON valide');
+            console.log('📄 Type de credentials:', credentials.type || 'OAuth2');
+            if (credentials.installed) {
+                console.log('🔑 Client ID:', credentials.installed.client_id.substring(0, 20) + '...');
+                console.log('🔒 Client Secret:', credentials.installed.client_secret ? 'Présent' : 'Manquant');
+            } else if (credentials.client_email) {
+                console.log('📧 Service Account:', credentials.client_email);
+            }
+        } catch (error) {
+            console.log('❌ Fichier JSON invalide:', error.message);
+        }
+    } else {
+        console.log('❌ Fichier de credentials non trouvé');
+    }
+    console.log('');
+
     // Initialiser le logger
     console.log('🔄 Initialisation...');
-    await driveLogger.initialize();
+    try {
+        await driveLogger.initialize();
+        console.log('✅ Initialisation réussie');
+    } catch (error) {
+        console.log('❌ Erreur d\'initialisation:', error.message);
+        console.log('🔍 Détails:', error);
+    }
     console.log('');
 
     // Tester la connexion
     console.log('🔗 Test de connexion...');
-    const connectionOk = await driveLogger.testConnection();
+    try {
+        const connectionOk = await driveLogger.testConnection();
+        console.log('✅ Test de connexion terminé');
+    } catch (error) {
+        console.log('❌ Erreur de connexion:', error.message);
+        console.log('🔍 Détails:', error);
+    }
     console.log('');
 
-    if (connectionOk) {
-        // Tester l'upload d'un fichier de test
+    // Tester l'upload seulement si la connexion fonctionne
+    if (driveLogger.drive) {
         console.log('📤 Test d\'upload...');
-        const testContent = `Test Google Drive - ${new Date().toISOString()}\nCeci est un test de connexion.`;
-        await driveLogger.queueFileUpload('test-drive.log', testContent);
-        
-        // Forcer l'upload immédiat
-        await driveLogger.forceUpload();
+        try {
+            const testContent = `Test Google Drive - ${new Date().toISOString()}\nCeci est un test de connexion.\nTimestamp: ${Date.now()}`;
+            await driveLogger.queueFileUpload('test-drive.log', testContent);
+            
+            // Forcer l'upload immédiat
+            await driveLogger.forceUpload();
+            console.log('✅ Test d\'upload terminé');
+        } catch (error) {
+            console.log('❌ Erreur d\'upload:', error.message);
+            console.log('🔍 Détails:', error);
+        }
         console.log('');
 
         // Lister les fichiers
         console.log('📁 Liste des fichiers dans Google Drive:');
-        const files = await driveLogger.listFiles();
-        files.slice(0, 5).forEach(file => {
-            console.log(`  - ${file.name} (${file.id})`);
-        });
-        if (files.length > 5) {
-            console.log(`  ... et ${files.length - 5} autres fichiers`);
+        try {
+            const files = await driveLogger.listFiles();
+            if (files.length === 0) {
+                console.log('📭 Aucun fichier trouvé dans le dossier');
+            } else {
+                files.slice(0, 5).forEach(file => {
+                    console.log(`  - ${file.name} (${file.id}) - ${file.size || '0'} bytes`);
+                });
+                if (files.length > 5) {
+                    console.log(`  ... et ${files.length - 5} autres fichiers`);
+                }
+            }
+        } catch (error) {
+            console.log('❌ Erreur lors de la liste des fichiers:', error.message);
         }
         console.log('');
 
@@ -50,10 +98,15 @@ async function testGoogleDrive() {
         if (logsUrl) {
             console.log(`🔗 Accès aux logs: ${logsUrl}`);
         }
+    } else {
+        console.log('⚠️ Impossible de tester l\'upload - Google Drive non initialisé');
     }
 
     console.log('\n✅ Test terminé');
 }
 
 // Exécuter le test
-testGoogleDrive().catch(console.error); 
+testGoogleDrive().catch(error => {
+    console.error('💥 Erreur fatale:', error);
+    process.exit(1);
+}); 
