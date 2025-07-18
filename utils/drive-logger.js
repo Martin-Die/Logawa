@@ -62,28 +62,29 @@ class GoogleDriveLogger {
                 throw new Error('Format OAuth2 invalide: section "installed" manquante');
             }
 
-            // Créer l'authentification OAuth2
-            const oauth2Client = new google.auth.OAuth2(
-                credentials.installed.client_id,
-                credentials.installed.client_secret,
-                credentials.installed.redirect_uris[0]
-            );
+            // Créer l'authentification OAuth2 avec les credentials directs
+            const oauth2Client = new google.auth.OAuth2();
+            oauth2Client.setCredentials({
+                client_id: credentials.installed.client_id,
+                client_secret: credentials.installed.client_secret,
+                redirect_uri: credentials.installed.redirect_uris[0]
+            });
 
-            // Pour un usage serveur, on peut utiliser un refresh token
-            // ou configurer l'authentification via URL
-            console.log('⚠️ OAuth2 nécessite une authentification manuelle');
-            console.log('🔗 URL d\'authentification:', oauth2Client.generateAuthUrl({
+            // Créer le client Drive avec l'authentification OAuth2
+            this.drive = google.drive({ 
+                version: 'v3', 
+                auth: oauth2Client 
+            });
+            
+            console.log('✅ API Google Drive initialisée (OAuth2)');
+            console.log('⚠️ Authentification requise - URL d\'authentification:');
+            console.log(oauth2Client.generateAuthUrl({
                 access_type: 'offline',
                 scope: ['https://www.googleapis.com/auth/drive.file']
             }));
 
-            // Créer le client Drive
-            this.drive = google.drive({ version: 'v3', auth: oauth2Client });
-            
-            console.log('✅ API Google Drive initialisée (OAuth2)');
-
         } catch (error) {
-            console.error('❌ Erreur lors de l\'initialisation de l\'API Google Drive:', error);
+            console.error('❌ Erreur lors de l\'initialisation de l\'API Google Drive:', error.message);
             throw error;
         }
     }

@@ -21,13 +21,15 @@ async function testGoogleDrive() {
         try {
             const credentials = JSON.parse(fs.readFileSync(driveLogger.credentialsPath, 'utf8'));
             console.log('✅ Fichier JSON valide');
-            console.log('📄 Type de credentials:', credentials.type || 'OAuth2');
-            if (credentials.installed) {
+            
+            // Vérifier seulement la structure OAuth2
+            if (credentials.installed && credentials.installed.client_id) {
                 console.log('🔑 Client ID:', credentials.installed.client_id.substring(0, 20) + '...');
                 console.log('🔒 Client Secret:', credentials.installed.client_secret ? 'Présent' : 'Manquant');
                 console.log('📄 Type: OAuth2');
             } else {
-                console.log('❌ Format de credentials non reconnu - Section "installed" manquante');
+                console.log('❌ Format de credentials OAuth2 invalide');
+                console.log('💡 Le fichier doit contenir une section "installed" avec client_id et client_secret');
             }
         } catch (error) {
             console.log('❌ Fichier JSON invalide:', error.message);
