@@ -18,6 +18,8 @@ services:
       - LOG_LEVEL=${LOG_LEVEL:-info}
       - LOGS_PATH=${LOGS_PATH:-/app/logs}
       - BACKUPS_PATH=${BACKUPS_PATH:-/app/backups}
+    ports:
+      - "8080:8080"
     volumes:
       # Montage des logs pour persistance (chemin configurable)
       - ${LOGS_PATH:-./logs}:/app/logs
