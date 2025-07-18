@@ -57,11 +57,16 @@ class GoogleDriveLogger {
             // Lire le fichier de credentials
             const credentials = JSON.parse(fs.readFileSync(this.credentialsPath, 'utf8'));
             
+            // Vérifier le format OAuth2
+            if (!credentials.installed) {
+                throw new Error('Format OAuth2 invalide: section "installed" manquante');
+            }
+
             // Créer l'authentification OAuth2
             const oauth2Client = new google.auth.OAuth2(
-                credentials.client_id,
-                credentials.client_secret,
-                credentials.redirect_uris[0]
+                credentials.installed.client_id,
+                credentials.installed.client_secret,
+                credentials.installed.redirect_uris[0]
             );
 
             // Pour un usage serveur, on peut utiliser un refresh token
@@ -290,6 +295,15 @@ class GoogleDriveLogger {
         try {
             console.log('🔄 Test de connexion Google Drive...');
             
+            // Vérifier si l'authentification est valide
+            const auth = this.drive.context._options.auth;
+            if (auth && auth.credentials) {
+                console.log('✅ Authentification OAuth2 configurée');
+            } else {
+                console.log('⚠️ Authentification OAuth2 non configurée - URL d\'authentification affichée ci-dessus');
+                return false;
+            }
+            
             // Tester l'accès au dossier
             const response = await this.drive.files.list({
                 q: `'${this.folderId}' in parents and trashed=false`,
@@ -302,7 +316,12 @@ class GoogleDriveLogger {
             
             return true;
         } catch (error) {
-            console.error('❌ Erreur de connexion Google Drive:', error.message);
+            if (error.message.includes('invalid_grant') || error.message.includes('unauthorized')) {
+                console.error('❌ Erreur d\'authentification OAuth2 - Token expiré ou invalide');
+                console.log('💡 Suivez l\'URL d\'authentification affichée ci-dessus pour obtenir un nouveau token');
+            } else {
+                console.error('❌ Erreur de connexion Google Drive:', error.message);
+            }
             return false;
         }
     }
