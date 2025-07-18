@@ -57,16 +57,25 @@ class GoogleDriveLogger {
             // Lire le fichier de credentials
             const credentials = JSON.parse(fs.readFileSync(this.credentialsPath, 'utf8'));
             
-            // Créer l'authentification
-            const auth = new google.auth.GoogleAuth({
-                credentials: credentials,
-                scopes: ['https://www.googleapis.com/auth/drive.file']
-            });
+            // Créer l'authentification OAuth2
+            const oauth2Client = new google.auth.OAuth2(
+                credentials.client_id,
+                credentials.client_secret,
+                credentials.redirect_uris[0]
+            );
+
+            // Pour un usage serveur, on peut utiliser un refresh token
+            // ou configurer l'authentification via URL
+            console.log('⚠️ OAuth2 nécessite une authentification manuelle');
+            console.log('🔗 URL d\'authentification:', oauth2Client.generateAuthUrl({
+                access_type: 'offline',
+                scope: ['https://www.googleapis.com/auth/drive.file']
+            }));
 
             // Créer le client Drive
-            this.drive = google.drive({ version: 'v3', auth });
+            this.drive = google.drive({ version: 'v3', auth: oauth2Client });
             
-            console.log('✅ API Google Drive initialisée');
+            console.log('✅ API Google Drive initialisée (OAuth2)');
 
         } catch (error) {
             console.error('❌ Erreur lors de l\'initialisation de l\'API Google Drive:', error);
