@@ -4,26 +4,33 @@ const moment = require('moment');
 
 class GoogleDriveLogger {
     constructor() {
-        this.enabled = process.env.GOOGLE_DRIVE_ENABLED === 'true';
-        this.folderId = process.env.GOOGLE_DRIVE_FOLDER_ID;
-        this.credentials = process.env.GOOGLE_DRIVE_CREDENTIALS;
-        this.uploadInterval = parseInt(process.env.GOOGLE_DRIVE_UPLOAD_INTERVAL) || 300000; // 5 minutes
+        this.credentialsPath = './logawa-logs-239e1d4a007f.json';
+        this.uploadInterval = parseInt(process.env.GOOGLE_DRIVE_UPLOAD_INTERVAL) || 300000; // 5 minutes par défaut
         this.logsDir = './logs';
+        
+        // Vérification unique : Google Drive activé seulement si le fichier JSON existe
+        this.enabled = process.env.GOOGLE_DRIVE_ENABLED === 'true' && fs.existsSync(this.credentialsPath);
+        this.folderId = process.env.GOOGLE_DRIVE_FOLDER_ID;
         
         this.uploadQueue = [];
         this.isUploading = false;
         this.drive = null;
+        
+        if (this.enabled) {
+            console.log(`🔄 Google Drive Logger activé - Interval: ${this.uploadInterval/1000}s`);
+        } else if (process.env.GOOGLE_DRIVE_ENABLED === 'true' && !fs.existsSync(this.credentialsPath)) {
+            console.log(`⚠️ Google Drive désactivé - Fichier credentials non trouvé: ${this.credentialsPath}`);
+        }
     }
 
     // Initialiser le logger Google Drive
     async initialize() {
         if (!this.enabled) {
-            console.log('⚠️ Google Drive logging désactivé');
-            return;
+            return; // Silencieux si déjà désactivé
         }
 
-        if (!this.folderId || !this.credentials) {
-            console.log('⚠️ Google Drive folder ID ou credentials non configurés');
+        if (!this.folderId) {
+            console.log('⚠️ Google Drive folder ID non configuré');
             return;
         }
 
@@ -47,8 +54,8 @@ class GoogleDriveLogger {
         try {
             const { google } = require('googleapis');
             
-            // Parser les credentials
-            const credentials = JSON.parse(this.credentials);
+            // Lire le fichier de credentials
+            const credentials = JSON.parse(fs.readFileSync(this.credentialsPath, 'utf8'));
             
             // Créer l'authentification
             const auth = new google.auth.GoogleAuth({
@@ -81,7 +88,7 @@ class GoogleDriveLogger {
             timestamp: Date.now()
         });
 
-        console.log(`📤 Ajouté à la queue Google Drive: ${driveFileName}`);
+        console.log(`📤 Ajouté à la queue Google Drive: ${driveFileName} (${content.length} caractères)`);
     }
 
     // Traiter la queue d'upload
@@ -94,7 +101,7 @@ class GoogleDriveLogger {
         try {
             for (const item of this.uploadQueue) {
                 await this.uploadFile(item);
-                await this.delay(2000); // Pause entre les uploads
+                await this.delay(1000); // Pause réduite entre les uploads
             }
 
             this.uploadQueue = [];
@@ -116,11 +123,11 @@ class GoogleDriveLogger {
             if (existingFile) {
                 // Mettre à jour le fichier existant
                 await this.updateFile(existingFile.id, item.content, item.fileName);
-                console.log(`✅ Fichier mis à jour: ${item.fileName}`);
+                console.log(`✅ Fichier mis à jour: ${item.fileName} (ID: ${existingFile.id})`);
             } else {
                 // Créer un nouveau fichier
-                await this.createFile(item.fileName, item.content);
-                console.log(`✅ Nouveau fichier créé: ${item.fileName}`);
+                const newFile = await this.createFile(item.fileName, item.content);
+                console.log(`✅ Nouveau fichier créé: ${item.fileName} (ID: ${newFile.data.id})`);
             }
 
         } catch (error) {
@@ -157,7 +164,7 @@ class GoogleDriveLogger {
             body: content
         };
 
-        await this.drive.files.create({
+        return await this.drive.files.create({
             resource: fileMetadata,
             media: media,
             fields: 'id'
@@ -205,14 +212,14 @@ class GoogleDriveLogger {
 
     // Créer un fichier de log et l'uploader
     async createAndUploadLog(fileName, content) {
-        if (!this.enabled) return;
-
-        // Sauvegarder localement
+        // Sauvegarder localement (toujours)
         const filePath = path.join(this.logsDir, fileName);
         fs.appendFileSync(filePath, content + '\n');
 
-        // Uploader vers Google Drive
-        await this.queueFileUpload(filePath, content);
+        // Uploader vers Google Drive (seulement si activé)
+        if (this.enabled && this.drive) {
+            await this.queueFileUpload(filePath, content);
+        }
     }
 
     // Lister les fichiers dans Google Drive
@@ -249,11 +256,57 @@ class GoogleDriveLogger {
         return {
             enabled: this.enabled,
             folderId: this.folderId,
+            credentialsPath: this.credentialsPath,
+            credentialsExists: fs.existsSync(this.credentialsPath),
             queueSize: this.uploadQueue.length,
             isUploading: this.isUploading,
             driveInitialized: !!this.drive,
-            logsUrl: this.getLogsUrl()
+            logsUrl: this.getLogsUrl(),
+            uploadInterval: this.uploadInterval
         };
+    }
+
+    // Test de connexion Google Drive
+    async testConnection() {
+        if (!this.enabled) {
+            console.log('❌ Google Drive désactivé');
+            return false;
+        }
+
+        if (!this.drive) {
+            console.log('❌ Google Drive non initialisé');
+            return false;
+        }
+
+        try {
+            console.log('🔄 Test de connexion Google Drive...');
+            
+            // Tester l'accès au dossier
+            const response = await this.drive.files.list({
+                q: `'${this.folderId}' in parents and trashed=false`,
+                fields: 'files(id, name)',
+                pageSize: 1
+            });
+
+            console.log(`✅ Connexion Google Drive OK - Dossier: ${this.folderId}`);
+            console.log(`📁 Fichiers trouvés: ${response.data.files.length}`);
+            
+            return true;
+        } catch (error) {
+            console.error('❌ Erreur de connexion Google Drive:', error.message);
+            return false;
+        }
+    }
+
+    // Forcer un upload immédiat pour test
+    async forceUpload() {
+        if (!this.enabled || !this.drive) {
+            console.log('❌ Google Drive non disponible');
+            return;
+        }
+
+        console.log('🔄 Upload forcé vers Google Drive...');
+        await this.processUploadQueue();
     }
 }
 

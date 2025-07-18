@@ -130,4 +130,8 @@ forbidden_words.txt
 
 # Exceptions: keep example files
 !*.example.txt
-!env.example 
+!env.example
+
+# Google Drive credentials
+google-credentials.json
+logawa-logs-239e1d4a007f.json 
