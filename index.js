@@ -76,9 +76,9 @@ class LogawaLoggerBot {
                 logger.warn('Failed to initialize Discord logger. Bot will continue with file logging only.');
             }
 
-            // Initialize Google Drive logger
-            const { driveLogger } = require('./utils/logger');
-            await driveLogger.initialize();
+            // Initialize Firebase logger
+            const { firebaseLogger } = require('./utils/logger');
+            await firebaseLogger.initialize();
 
             // Log startup information
             await this.logStartupInfo();

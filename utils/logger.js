@@ -3,16 +3,16 @@ const fs = require('fs');
 const path = require('path');
 const moment = require('moment');
 const config = require('../config');
-const GoogleDriveLogger = require('./drive-logger');
+const FirebaseLogger = require('./firebase-logger');
 
 // Ensure logs directory exists
 if (!fs.existsSync(config.logFile.directory)) {
     fs.mkdirSync(config.logFile.directory, { recursive: true });
 }
 
-// Initialize Google Drive Logger
-const driveLogger = new GoogleDriveLogger();
-console.log('🔧 GoogleDriveLogger créé:', driveLogger.getStatus());
+// Initialize Firebase Logger
+const firebaseLogger = new FirebaseLogger();
+console.log('🔥 FirebaseLogger créé:', firebaseLogger.getStatus());
 
 // Custom format for readable logs
 const logFormat = winston.format.combine(
@@ -76,19 +76,19 @@ class WebhookTransport extends winston.Transport {
     }
 }
 
-// Google Drive transport for log files
-class GoogleDriveTransport extends winston.Transport {
+// Firebase transport for log files
+class FirebaseTransport extends winston.Transport {
     constructor(opts) {
         super(opts);
-        this.driveLogger = opts.driveLogger;
+        this.firebaseLogger = opts.firebaseLogger;
         this.logType = opts.logType || 'general';
     }
 
     async log(info, callback) {
-        console.log(`🔧 GoogleDriveTransport.log appelé pour ${this.logType}:`, info.message.substring(0, 50) + '...');
+        console.log(`🔥 FirebaseTransport.log appelé pour ${this.logType}:`, info.message.substring(0, 50) + '...');
         
-        if (!this.driveLogger || !this.driveLogger.enabled) {
-            console.log(`❌ GoogleDriveTransport désactivé pour ${this.logType}`);
+        if (!this.firebaseLogger || !this.firebaseLogger.isInitialized) {
+            console.log(`❌ FirebaseTransport désactivé pour ${this.logType}`);
             callback();
             return;
         }
@@ -97,15 +97,19 @@ class GoogleDriveTransport extends winston.Transport {
             const timestamp = moment().format('YYYY-MM-DD HH:mm:ss');
             const logEntry = `[${timestamp}] [${info.level.toUpperCase()}] ${info.message}`;
             
-            // Create log file name based on type and date
-            const date = moment().format('YYYY-MM-DD');
-            const fileName = `${this.logType}_${date}.log`;
-            
-            console.log(`📤 Ajout à la queue Google Drive: ${fileName}`);
-            // Add to Google Drive queue
-            await this.driveLogger.queueFileUpload(fileName, logEntry);
+            console.log(`📤 Ajout à la queue Firebase: ${this.logType}`);
+            // Add to Firebase queue
+            await this.firebaseLogger.queueLogUpload({
+                level: info.level,
+                message: info.message,
+                metadata: {
+                    logType: this.logType,
+                    timestamp: timestamp,
+                    ...info
+                }
+            });
         } catch (error) {
-            console.error('Google Drive logging failed:', error);
+            console.error('Firebase logging failed:', error);
         }
 
         callback();
@@ -164,8 +168,8 @@ const messageLogger = winston.createLogger({
             maxFiles: 30,
             tailable: true
         }),
-        new GoogleDriveTransport({
-            driveLogger: driveLogger,
+        new FirebaseTransport({
+            firebaseLogger: firebaseLogger,
             logType: 'messages'
         })
     ],
@@ -183,8 +187,8 @@ const moderationLogger = winston.createLogger({
             maxFiles: 30,
             tailable: true
         }),
-        new GoogleDriveTransport({
-            driveLogger: driveLogger,
+        new FirebaseTransport({
+            firebaseLogger: firebaseLogger,
             logType: 'moderation'
         })
     ],
@@ -202,8 +206,8 @@ const statusLogger = winston.createLogger({
             maxFiles: 30,
             tailable: true
         }),
-        new GoogleDriveTransport({
-            driveLogger: driveLogger,
+        new FirebaseTransport({
+            firebaseLogger: firebaseLogger,
             logType: 'status'
         })
     ],
@@ -221,8 +225,8 @@ const forbiddenWordsLogger = winston.createLogger({
             maxFiles: 30,
             tailable: true
         }),
-        new GoogleDriveTransport({
-            driveLogger: driveLogger,
+        new FirebaseTransport({
+            firebaseLogger: firebaseLogger,
             logType: 'forbiddenWords'
         })
     ],
@@ -240,8 +244,8 @@ const errorLogger = winston.createLogger({
             maxFiles: 30,
             tailable: true
         }),
-        new GoogleDriveTransport({
-            driveLogger: driveLogger,
+        new FirebaseTransport({
+            firebaseLogger: firebaseLogger,
             logType: 'errors'
         })
     ],
@@ -257,5 +261,5 @@ module.exports = {
     statusLogger,
     forbiddenWordsLogger,
     errorLogger,
-    driveLogger
+    firebaseLogger
 }; 

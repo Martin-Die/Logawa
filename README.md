@@ -30,6 +30,7 @@ A comprehensive, secure, and reliable Discord bot designed to log all server act
 ### Logging Features
 - **Multi-Channel Logging**: Separate Discord channels for different log types (status, messages, forbidden words, moderation)
 - **Dual Logging**: Simultaneous file and Discord channel logging
+- **Firebase Integration**: Cloud logging with Firestore database
 - **Structured Logs**: Readable text format with timestamps
 - **Daily Rotation**: Automatic log file rotation and cleanup
 - **Error Handling**: Comprehensive error logging and recovery
