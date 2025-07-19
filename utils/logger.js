@@ -116,6 +116,24 @@ class FirebaseTransport extends winston.Transport {
     }
 }
 
+// Function to create organized log file path (year/month/day)
+function createLogFilePath(logType) {
+    const now = moment();
+    const year = now.format('YYYY');
+    const month = now.format('MM');
+    const day = now.format('DD');
+    
+    // Create path: logs/type/YYYY/MM/DD.log
+    const logPath = path.join(config.logFile.directory, logType, year, month);
+    
+    // Ensure directory exists
+    if (!fs.existsSync(logPath)) {
+        fs.mkdirSync(logPath, { recursive: true });
+    }
+    
+    return path.join(logPath, `${day}.log`);
+}
+
 // Create subdirectories for different log types
 const logTypes = ['messages', 'moderation', 'status', 'forbiddenWords', 'errors'];
 logTypes.forEach(type => {
@@ -138,9 +156,9 @@ const logger = winston.createLogger({
             )
         }),
 
-        // Separate file for errors (global)
+        // Separate file for errors (global) - organized by year/month/day
         new winston.transports.File({
-            filename: path.join(config.logFile.directory, 'error.log'),
+            filename: createLogFilePath('errors'),
             level: 'error',
             maxsize: 10 * 1024 * 1024,
             maxFiles: 7,
@@ -163,7 +181,7 @@ const messageLogger = winston.createLogger({
     format: logFormat,
     transports: [
         new winston.transports.File({
-            filename: path.join(config.logFile.directory, 'messages', `${moment().format('YYYY-MM-DD')}.log`),
+            filename: createLogFilePath('messages'),
             maxsize: 10 * 1024 * 1024,
             maxFiles: 30,
             tailable: true
@@ -182,7 +200,7 @@ const moderationLogger = winston.createLogger({
     format: logFormat,
     transports: [
         new winston.transports.File({
-            filename: path.join(config.logFile.directory, 'moderation', `${moment().format('YYYY-MM-DD')}.log`),
+            filename: createLogFilePath('moderation'),
             maxsize: 10 * 1024 * 1024,
             maxFiles: 30,
             tailable: true
@@ -201,7 +219,7 @@ const statusLogger = winston.createLogger({
     format: logFormat,
     transports: [
         new winston.transports.File({
-            filename: path.join(config.logFile.directory, 'status', `${moment().format('YYYY-MM-DD')}.log`),
+            filename: createLogFilePath('status'),
             maxsize: 10 * 1024 * 1024,
             maxFiles: 30,
             tailable: true
@@ -220,7 +238,7 @@ const forbiddenWordsLogger = winston.createLogger({
     format: logFormat,
     transports: [
         new winston.transports.File({
-            filename: path.join(config.logFile.directory, 'forbiddenWords', `${moment().format('YYYY-MM-DD')}.log`),
+            filename: createLogFilePath('forbiddenWords'),
             maxsize: 10 * 1024 * 1024,
             maxFiles: 30,
             tailable: true
@@ -239,7 +257,7 @@ const errorLogger = winston.createLogger({
     format: logFormat,
     transports: [
         new winston.transports.File({
-            filename: path.join(config.logFile.directory, 'errors', `${moment().format('YYYY-MM-DD')}.log`),
+            filename: createLogFilePath('errors'),
             maxsize: 10 * 1024 * 1024,
             maxFiles: 30,
             tailable: true

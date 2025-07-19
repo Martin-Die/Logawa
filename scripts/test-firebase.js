@@ -26,13 +26,13 @@ async function testFirebase() {
         await firebaseLogger.queueLogUpload({
             level: 'info',
             message: 'Test de log Firebase',
-            metadata: { test: true, timestamp: new Date() }
+            metadata: { logType: 'messages', test: true, timestamp: new Date() }
         });
 
         await firebaseLogger.queueLogUpload({
             level: 'error',
             message: 'Test d\'erreur Firebase',
-            metadata: { test: true, error: 'test error' }
+            metadata: { logType: 'errors', test: true, error: 'test error' }
         });
 
         // Test d'upload forcé
@@ -46,10 +46,34 @@ async function testFirebase() {
         
         recentLogs.forEach((log, index) => {
             console.log(`  ${index + 1}. [${log.level}] ${log.message} - ${log.timestamp?.toDate?.() || log.timestamp}`);
+            console.log(`     📂 Collection: ${log.collectionPath}`);
+        });
+
+        // Test de récupération par date
+        console.log('\n6. Test de récupération par date...');
+        const now = new Date();
+        const year = now.getFullYear().toString();
+        const month = (now.getMonth() + 1).toString().padStart(2, '0');
+        const day = now.getDate().toString().padStart(2, '0');
+        
+        const logsByDate = await firebaseLogger.listLogsByDate('messages', year, month, day, 10);
+        console.log(`📅 Logs du ${day}/${month}/${year} (messages): ${logsByDate.length} trouvés`);
+        
+        logsByDate.forEach((log, index) => {
+            console.log(`  ${index + 1}. [${log.level}] ${log.message} (jour: ${log.day})`);
+        });
+
+        // Test de récupération du mois
+        console.log('\n7. Test de récupération du mois...');
+        const logsByMonth = await firebaseLogger.listLogsByMonth('messages', year, month, 10);
+        console.log(`📅 Logs du mois ${month}/${year} (messages): ${logsByMonth.length} trouvés`);
+        
+        logsByMonth.forEach((log, index) => {
+            console.log(`  ${index + 1}. [${log.level}] ${log.message} (jour: ${log.day})`);
         });
 
         // Affichage du statut
-        console.log('\n6. Statut du logger:');
+        console.log('\n8. Statut du logger:');
         const status = firebaseLogger.getStatus();
         console.log(`   - Initialisé: ${status.initialized}`);
         console.log(`   - Queue: ${status.queueLength} logs`);
