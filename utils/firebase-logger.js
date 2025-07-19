@@ -11,6 +11,28 @@ class FirebaseLogger {
         this.uploadInterval = null;
     }
 
+    // Fonction pour remplacer undefined et null par "no content"
+    cleanForFirestore(obj) {
+        if (obj === null || obj === undefined) {
+            return "no content";
+        }
+        
+        if (typeof obj !== 'object') {
+            return obj;
+        }
+        
+        if (Array.isArray(obj)) {
+            return obj.map(item => this.cleanForFirestore(item));
+        }
+        
+        const cleaned = {};
+        for (const [key, value] of Object.entries(obj)) {
+            cleaned[key] = this.cleanForFirestore(value);
+        }
+        
+        return cleaned;
+    }
+
     async initialize() {
         try {
             console.log('🔥 Initialisation Firebase...');
@@ -124,7 +146,7 @@ class FirebaseLogger {
                     level: logEntry.level,
                     message: logEntry.message,
                     timestamp: logEntry.timestamp,
-                    metadata: logEntry.metadata || {}
+                    metadata: this.cleanForFirestore(logEntry.metadata || {})
                 });
             }
 
@@ -145,7 +167,7 @@ class FirebaseLogger {
                     // Ajouter les nouveaux logs
                     const allLogs = [...existingLogs, ...dayData.logs];
                     
-                    batch.set(docRef, {
+                    batch.set(docRef, this.cleanForFirestore({
                         logType: dayData.logType,
                         year: dayData.year,
                         month: dayData.month,
@@ -154,7 +176,7 @@ class FirebaseLogger {
                         lastUpdated: new Date(),
                         totalLogs: allLogs.length,
                         source: 'logawa-bot'
-                    });
+                    }));
                     
                     processedLogs.push(...dayData.logs);
                 } catch (error) {
