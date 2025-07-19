@@ -292,7 +292,7 @@ LOGAWA/
 ├── package.json            # Dependencies and scripts
 ├── render.yaml             # Render deployment config
 ├── README.md               # This file
-├── render-deployment-guide.md # Detailed deployment guide
+
 ├── utils/
 │   └── logger.js           # Logging utilities
 └── events/

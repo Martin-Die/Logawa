@@ -11,13 +11,13 @@ COPY package*.json ./
 # Mettre à jour npm intelligemment et installer les dépendances
 RUN npm --version && \
     npm install -g npm@latest && \
-    npm ci --only=production
+    npm ci --omit=dev
 
 # Copier le code source
 COPY . .
 
 # Créer les répertoires nécessaires
-RUN mkdir -p logs backups
+RUN mkdir -p logs
 
 # Exposer le port (si nécessaire)
 EXPOSE 3000

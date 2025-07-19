@@ -116,7 +116,6 @@ ehthumbs.db
 Thumbs.db
 
 # Backup files
-backups/
 *.backup
 *.bak
 
