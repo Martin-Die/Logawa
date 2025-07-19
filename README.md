@@ -30,7 +30,7 @@ A comprehensive, secure, and reliable Discord bot designed to log all server act
 ### Logging Features
 - **Multi-Channel Logging**: Separate Discord channels for different log types (status, messages, forbidden words, moderation)
 - **Dual Logging**: Simultaneous file and Discord channel logging
-- **Firebase Integration**: Cloud logging with Firestore database
+- **Firebase Integration**: Cloud logging with Firestore database (organized by year/month/day)
 - **Structured Logs**: Readable text format with timestamps
 - **Daily Rotation**: Automatic log file rotation and cleanup
 - **Error Handling**: Comprehensive error logging and recovery
@@ -206,48 +206,17 @@ logs/
 
 ### 🔧 Gestion des Logs
 
-```bash
-# Lister les fichiers de logs
-node scripts/log-manager.js list
+Les logs sont automatiquement organisés et envoyés vers Firebase toutes les 5 minutes.
 
-# Analyser un fichier de log
-node scripts/log-manager.js analyze error.log
+**Structure des logs :**
+- **Fichiers locaux** : `logs/type/YYYY/MM/DD.log`
+- **Firebase** : Collection organisée par année/mois/jour
+- **Discord** : Canaux de logs en temps réel
 
-# Rechercher dans les logs
-node scripts/log-manager.js search "ERROR"
-
-# Surveiller les logs en temps réel
-node scripts/log-manager.js watch
-
-# Créer une sauvegarde
-node scripts/log-manager.js backup
-
-# Générer un rapport complet
-node scripts/log-manager.js report
-```
-
-### 🔄 Sauvegarde Automatique
-
-```bash
-# Démarrer la sauvegarde automatique
-node scripts/auto-backup.js start
-
-# Créer une sauvegarde manuelle
-node scripts/auto-backup.js backup
-
-# Voir le rapport de sauvegarde
-node scripts/auto-backup.js report
-```
-
-**Variables d'environnement pour la sauvegarde :**
-```env
-AUTO_BACKUP_ENABLED=true
-BACKUP_INTERVAL_HOURS=24
-BACKUP_RETENTION_DAYS=30
-BACKUP_COMPRESS=true
-BACKUP_NOTIFY_DISCORD=true
-BACKUP_WEBHOOK_URL=url_webhook_discord
-```
+**Accès aux logs :**
+- **Console Firebase** : Interface web pour consulter les logs
+- **Fichiers locaux** : Logs organisés par date
+- **Discord** : Canaux de logs configurés
 
 ### 📝 Gestion des Mots Interdits
 
