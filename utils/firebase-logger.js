@@ -353,8 +353,8 @@ class FirebaseLogger {
         }
 
         try {
-            // Tester la connexion en lisant un document
-            const testDoc = await this.db.collection('test').doc('connection').get();
+            // Tester la connexion en listant les collections (sans créer de document)
+            await this.db.listCollections();
             return { success: true, message: 'Connexion Firebase OK' };
         } catch (error) {
             return { success: false, error: error.message };
