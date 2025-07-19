@@ -9,6 +9,8 @@ class FirebaseLogger {
         this.uploadQueue = [];
         this.isProcessing = false;
         this.uploadInterval = null;
+        this.cleanupInterval = null;
+        this.lastUploadTime = null;
     }
 
     // Fonction pour remplacer undefined et null par "no content"
@@ -58,8 +60,9 @@ class FirebaseLogger {
             
             console.log('✅ Firebase initialisé avec succès');
             
-            // Démarrer le traitement de la queue
+            // Démarrer le traitement de la queue et le nettoyage
             this.startQueueProcessing();
+            this.startCleanupProcess();
             
             return true;
         } catch (error) {
@@ -69,12 +72,26 @@ class FirebaseLogger {
     }
 
     startQueueProcessing() {
-        // Traiter la queue toutes les 5 minutes
+        // Traiter la queue toutes les 30 minutes (optimisation coûts)
         this.uploadInterval = setInterval(() => {
             this.processUploadQueue();
-        }, 5 * 60 * 1000);
+        }, 30 * 60 * 1000);
         
-        console.log('🔄 Traitement de queue Firebase démarré (toutes les 5 minutes)');
+        console.log('🔄 Traitement de queue Firebase démarré (toutes les 30 minutes)');
+    }
+
+    startCleanupProcess() {
+        // Nettoyer les logs locaux et redémarrer chaque dimanche à 2h du matin
+        this.cleanupInterval = setInterval(() => {
+            const now = new Date();
+            if (now.getHours() === 2 && now.getMinutes() === 0 && now.getDay() === 0) { // Dimanche à 2h
+                this.cleanupLocalLogs();
+                this.scheduleWeeklyRestart();
+            }
+        }, 60 * 1000); // Vérifier toutes les minutes
+        
+        console.log('🧹 Processus de nettoyage local démarré (hebdomadaire - dimanche à 2h)');
+        console.log('🔄 Redémarrage hebdomadaire programmé (dimanche à 2h05)');
     }
 
     stopQueueProcessing() {
@@ -82,6 +99,12 @@ class FirebaseLogger {
             clearInterval(this.uploadInterval);
             this.uploadInterval = null;
             console.log('⏹️ Traitement de queue Firebase arrêté');
+        }
+        
+        if (this.cleanupInterval) {
+            clearInterval(this.cleanupInterval);
+            this.cleanupInterval = null;
+            console.log('⏹️ Processus de nettoyage arrêté');
         }
     }
 
@@ -192,11 +215,125 @@ class FirebaseLogger {
                 !processedLogs.find(processed => processed.id === log.id)
             );
 
-            console.log(`✅ ${processedLogs.length} logs uploadés vers Firebase`);
+            this.lastUploadTime = new Date();
+            console.log(`✅ ${processedLogs.length} logs uploadés vers Firebase (${this.uploadQueue.length} restants)`);
         } catch (error) {
             console.error('❌ Erreur lors du traitement de la queue Firebase:', error.message);
         } finally {
             this.isProcessing = false;
+        }
+    }
+
+    // Nettoyer les logs locaux (garder 7 jours)
+    async cleanupLocalLogs() {
+        try {
+            console.log('🧹 Début du nettoyage des logs locaux...');
+            
+            const logsDir = path.join(process.cwd(), 'logs');
+            if (!fs.existsSync(logsDir)) {
+                return;
+            }
+
+            const now = new Date();
+            const cutoffDate = new Date(now.getTime() - (7 * 24 * 60 * 60 * 1000)); // 7 jours
+            
+            let deletedFiles = 0;
+            let deletedSize = 0;
+
+            // Parcourir les dossiers année/mois/jour
+            const years = fs.readdirSync(logsDir);
+            for (const year of years) {
+                const yearPath = path.join(logsDir, year);
+                if (!fs.statSync(yearPath).isDirectory()) continue;
+
+                const months = fs.readdirSync(yearPath);
+                for (const month of months) {
+                    const monthPath = path.join(yearPath, month);
+                    if (!fs.statSync(monthPath).isDirectory()) continue;
+
+                    const days = fs.readdirSync(monthPath);
+                    for (const day of days) {
+                        const dayPath = path.join(monthPath, day);
+                        if (!fs.statSync(dayPath).isDirectory()) continue;
+
+                        // Vérifier si le dossier date est plus ancien que 7 jours
+                        const folderDate = new Date(`${year}-${month}-${day}`);
+                        if (folderDate < cutoffDate) {
+                            const stats = fs.statSync(dayPath);
+                            deletedSize += stats.size;
+                            
+                            fs.rmSync(dayPath, { recursive: true, force: true });
+                            deletedFiles++;
+                            
+                            console.log(`🗑️ Supprimé: ${year}/${month}/${day}`);
+                        }
+                    }
+
+                    // Supprimer les dossiers mois vides
+                    if (fs.readdirSync(monthPath).length === 0) {
+                        fs.rmdirSync(monthPath);
+                    }
+                }
+
+                // Supprimer les dossiers année vides
+                if (fs.readdirSync(yearPath).length === 0) {
+                    fs.rmdirSync(yearPath);
+                }
+            }
+
+            const deletedSizeMB = (deletedSize / (1024 * 1024)).toFixed(2);
+            console.log(`✅ Nettoyage terminé: ${deletedFiles} dossiers supprimés, ${deletedSizeMB} MB libérés`);
+            
+        } catch (error) {
+            console.error('❌ Erreur lors du nettoyage des logs locaux:', error.message);
+        }
+    }
+
+    // Programmer le redémarrage hebdomadaire
+    scheduleWeeklyRestart() {
+        try {
+            console.log('🔄 Programmation du redémarrage hebdomadaire...');
+            
+            // Attendre 5 minutes après le nettoyage pour s'assurer que tout est terminé
+            setTimeout(() => {
+                console.log('🔄 Redémarrage hebdomadaire en cours...');
+                console.log('📝 Logs de redémarrage envoyés vers Firebase...');
+                
+                // Envoyer un log de redémarrage vers Firebase
+                this.queueLogUpload({
+                    level: 'info',
+                    message: 'Redémarrage hebdomadaire programmé - Maintenance système',
+                    metadata: {
+                        logType: 'status',
+                        source: 'system-maintenance',
+                        restartType: 'weekly',
+                        reason: 'Maintenance hebdomadaire après nettoyage'
+                    }
+                });
+                
+                // Forcer l'upload avant le redémarrage
+                this.forceUpload().then(() => {
+                    console.log('✅ Logs sauvegardés, redémarrage dans 30 secondes...');
+                    
+                    // Attendre 30 secondes pour finaliser l'upload
+                    setTimeout(() => {
+                        console.log('🔄 Redémarrage du système...');
+                        
+                        // Redémarrer le processus (différent selon l'environnement)
+                        if (process.platform === 'win32') {
+                            // Windows
+                            require('child_process').exec('shutdown /r /t 0');
+                        } else {
+                            // Linux/Raspberry Pi
+                            require('child_process').exec('sudo reboot');
+                        }
+                    }, 30000); // 30 secondes
+                });
+                
+            }, 5 * 60 * 1000); // 5 minutes après le nettoyage
+            
+        } catch (error) {
+            console.error('❌ Erreur lors de la programmation du redémarrage:', error.message);
         }
     }
 
@@ -345,11 +482,45 @@ class FirebaseLogger {
     }
 
     getStatus() {
+        const now = new Date();
+        
+        // Calculer le prochain nettoyage (dimanche à 2h)
+        const nextCleanup = new Date(now);
+        nextCleanup.setHours(2, 0, 0, 0);
+        while (nextCleanup.getDay() !== 0) { // 0 = dimanche
+            nextCleanup.setDate(nextCleanup.getDate() + 1);
+        }
+        if (nextCleanup <= now) {
+            nextCleanup.setDate(nextCleanup.getDate() + 7);
+        }
+        
+        // Calculer le prochain redémarrage (dimanche à 2h05)
+        const nextRestart = new Date(nextCleanup);
+        nextRestart.setMinutes(5);
+        
+        // Calculer le prochain upload Firebase
+        let nextUploadTime = 'N/A';
+        if (this.uploadInterval && this.lastUploadTime) {
+            const nextUpload = new Date(this.lastUploadTime.getTime() + (30 * 60 * 1000));
+            if (nextUpload > now) {
+                const diffMs = nextUpload - now;
+                const diffMinutes = Math.floor(diffMs / (1000 * 60));
+                nextUploadTime = `${diffMinutes} minutes`;
+            } else {
+                nextUploadTime = 'Bientôt';
+            }
+        }
+        
         return {
             initialized: this.isInitialized,
             queueLength: this.uploadQueue.length,
             isProcessing: this.isProcessing,
-            uploadInterval: this.uploadInterval ? 'active' : 'inactive'
+            uploadInterval: this.uploadInterval ? '30 minutes' : 'inactive',
+            lastUploadTime: this.lastUploadTime,
+            nextUploadIn: nextUploadTime,
+            nextCleanup: nextCleanup.toLocaleString('fr-FR'),
+            nextRestart: nextRestart.toLocaleString('fr-FR'),
+            optimization: 'Hybride: logs locaux + sync Firebase 30min + nettoyage hebdo 7j + redémarrage hebdo'
         };
     }
 
