@@ -68,9 +68,13 @@ class FirebaseLogger {
     }
 
     startQueueProcessing() {
-        // Traiter la queue toutes les 30 minutes (optimisation coûts)
-        this.uploadInterval = setInterval(() => {
-            this.processUploadQueue();
+        // Traiter la queue et synchroniser les logs locaux toutes les 30 minutes (optimisation coûts)
+        this.uploadInterval = setInterval(async () => {
+            // Traiter la queue des nouveaux logs
+            await this.processUploadQueue();
+            
+            // Synchroniser les logs existants en local
+            await this.syncExistingLogs();
         }, 30 * 60 * 1000);
     }
 
@@ -524,6 +528,106 @@ class FirebaseLogger {
     async forceUpload() {
         console.log('🚀 Upload forcé vers Firebase...');
         await this.processUploadQueue();
+    }
+
+    // Synchroniser les logs du jour actuel en local vers Firebase
+    async syncExistingLogs() {
+        if (!this.isInitialized) {
+            return; // Silencieux en production
+        }
+
+        try {
+            const logsDir = path.join(process.cwd(), 'logs');
+            if (!fs.existsSync(logsDir)) {
+                return;
+            }
+
+            // Obtenir la date actuelle
+            const now = new Date();
+            const currentYear = now.getFullYear().toString();
+            const currentMonth = (now.getMonth() + 1).toString().padStart(2, '0');
+            const currentDay = now.getDate().toString().padStart(2, '0');
+
+            const logTypes = ['messages', 'moderation', 'status', 'forbiddenWords', 'errors'];
+            let totalSynced = 0;
+
+            for (const logType of logTypes) {
+                const typeDir = path.join(logsDir, logType);
+                if (!fs.existsSync(typeDir)) continue;
+
+                // Vérifier si le dossier de l'année existe
+                const yearPath = path.join(typeDir, currentYear);
+                if (!fs.existsSync(yearPath) || !fs.statSync(yearPath).isDirectory()) continue;
+
+                // Vérifier si le dossier du mois existe
+                const monthPath = path.join(yearPath, currentMonth);
+                if (!fs.existsSync(monthPath) || !fs.statSync(monthPath).isDirectory()) continue;
+
+                // Vérifier si le dossier du jour existe
+                const dayPath = path.join(monthPath, currentDay);
+                if (!fs.existsSync(dayPath) || !fs.statSync(dayPath).isDirectory()) continue;
+
+                // Lire le fichier de log du jour actuel
+                const logFile = path.join(dayPath, `${currentDay}.log`);
+                if (fs.existsSync(logFile)) {
+                    const synced = await this.syncLogFile(logFile, logType, currentYear, currentMonth, currentDay);
+                    totalSynced += synced;
+                }
+            }
+
+            if (totalSynced > 0) {
+                console.log(`📤 Sync Firebase: ${totalSynced} logs du jour synchronisés`);
+            }
+            
+        } catch (error) {
+            console.error('❌ Erreur lors de la synchronisation des logs du jour:', error.message);
+        }
+    }
+
+    // Synchroniser un fichier de log spécifique
+    async syncLogFile(logFilePath, logType, year, month, day) {
+        try {
+            const content = fs.readFileSync(logFilePath, 'utf8');
+            const lines = content.split('\n').filter(line => line.trim());
+            
+            let syncedCount = 0;
+            
+            for (const line of lines) {
+                // Parser la ligne de log: [timestamp] [LEVEL] message
+                const match = line.match(/^\[([^\]]+)\] \[([^\]]+)\] (.+)$/);
+                if (match) {
+                    const [, timestamp, level, message] = match;
+                    
+                    // Créer l'entrée de log
+                    const logEntry = {
+                        level: level.toLowerCase(),
+                        message: message,
+                        timestamp: new Date(timestamp),
+                        id: Date.now() + Math.random().toString(36).substr(2, 9),
+                        year: year,
+                        month: month,
+                        day: day,
+                        logType: logType,
+                        collectionPath: `${logType}/${year}/${month}`,
+                        metadata: {
+                            logType: logType,
+                            timestamp: timestamp,
+                            source: 'local-sync'
+                        }
+                    };
+
+                    // Ajouter à la queue
+                    this.uploadQueue.push(logEntry);
+                    syncedCount++;
+                }
+            }
+
+            return syncedCount;
+            
+        } catch (error) {
+            console.error(`❌ Erreur lors de la synchronisation de ${logFilePath}:`, error.message);
+            return 0;
+        }
     }
 
     async cleanup() {
