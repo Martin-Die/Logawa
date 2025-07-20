@@ -569,14 +569,18 @@ class FirebaseLogger {
     // Synchroniser les logs du jour actuel en local vers Firebase
     async syncExistingLogs() {
         if (!this.isInitialized) {
-            return; // Silencieux en production
+            console.log('⚠️ Firebase non initialisé pour la synchronisation');
+            return;
         }
 
         try {
             const logsDir = path.join(process.cwd(), 'logs');
             if (!fs.existsSync(logsDir)) {
+                console.log('📂 Dossier logs non trouvé, synchronisation ignorée');
                 return;
             }
+
+            console.log('📂 Dossier logs trouvé, début de la synchronisation...');
 
             // Obtenir la date actuelle
             const now = new Date();
@@ -588,28 +592,45 @@ class FirebaseLogger {
             let totalSynced = 0;
             let filesChecked = 0;
 
+            console.log(`📅 Recherche des logs pour: ${currentYear}/${currentMonth}/${currentDay}`);
+            
             for (const logType of logTypes) {
                 const typeDir = path.join(logsDir, logType);
-                if (!fs.existsSync(typeDir)) continue;
+                if (!fs.existsSync(typeDir)) {
+                    console.log(`📂 Dossier ${logType} non trouvé`);
+                    continue;
+                }
 
                 // Vérifier si le dossier de l'année existe
                 const yearPath = path.join(typeDir, currentYear);
-                if (!fs.existsSync(yearPath) || !fs.statSync(yearPath).isDirectory()) continue;
+                if (!fs.existsSync(yearPath) || !fs.statSync(yearPath).isDirectory()) {
+                    console.log(`📂 Dossier année ${currentYear} non trouvé pour ${logType}`);
+                    continue;
+                }
 
                 // Vérifier si le dossier du mois existe
                 const monthPath = path.join(yearPath, currentMonth);
-                if (!fs.existsSync(monthPath) || !fs.statSync(monthPath).isDirectory()) continue;
+                if (!fs.existsSync(monthPath) || !fs.statSync(monthPath).isDirectory()) {
+                    console.log(`📂 Dossier mois ${currentMonth} non trouvé pour ${logType}`);
+                    continue;
+                }
 
                 // Vérifier si le dossier du jour existe
                 const dayPath = path.join(monthPath, currentDay);
-                if (!fs.existsSync(dayPath) || !fs.statSync(dayPath).isDirectory()) continue;
+                if (!fs.existsSync(dayPath) || !fs.statSync(dayPath).isDirectory()) {
+                    console.log(`📂 Dossier jour ${currentDay} non trouvé pour ${logType}`);
+                    continue;
+                }
 
                 // Lire le fichier de log du jour actuel
                 const logFile = path.join(dayPath, `${currentDay}.log`);
                 if (fs.existsSync(logFile)) {
+                    console.log(`📄 Fichier trouvé: ${logType}/${currentYear}/${currentMonth}/${currentDay}.log`);
                     filesChecked++;
                     const synced = await this.syncLogFile(logFile, logType, currentYear, currentMonth, currentDay);
                     totalSynced += synced;
+                } else {
+                    console.log(`📄 Fichier non trouvé: ${logType}/${currentYear}/${currentMonth}/${currentDay}.log`);
                 }
             }
 
@@ -617,10 +638,15 @@ class FirebaseLogger {
                 console.log(`📤 Sync Firebase: ${totalSynced} logs synchronisés depuis ${filesChecked} fichiers`);
             } else if (filesChecked > 0) {
                 console.log(`📤 Sync Firebase: Aucun nouveau log à synchroniser (${filesChecked} fichiers vérifiés)`);
+            } else {
+                console.log('📤 Sync Firebase: Aucun fichier de log trouvé pour aujourd\'hui');
             }
+            
+            console.log('✅ Synchronisation terminée');
             
         } catch (error) {
             console.error('❌ Erreur lors de la synchronisation des logs du jour:', error.message);
+            console.error('❌ Stack trace:', error.stack);
         }
     }
 
