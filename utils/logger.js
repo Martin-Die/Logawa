@@ -134,14 +134,61 @@ function createLogFilePath(logType) {
     return path.join(logPath, `${day}.log`);
 }
 
-// Create subdirectories for different log types
-const logTypes = ['messages', 'moderation', 'status', 'forbiddenWords', 'errors'];
-logTypes.forEach(type => {
-    const typeDir = path.join(config.logFile.directory, type);
-    if (!fs.existsSync(typeDir)) {
-        fs.mkdirSync(typeDir, { recursive: true });
+// Function to ensure all log directories exist
+function ensureLogDirectories() {
+    // Ensure main logs directory exists
+    if (!fs.existsSync(config.logFile.directory)) {
+        fs.mkdirSync(config.logFile.directory, { recursive: true });
     }
-});
+    
+    // Create subdirectories for different log types
+    const logTypes = ['messages', 'moderation', 'status', 'forbiddenWords', 'errors'];
+    logTypes.forEach(type => {
+        const typeDir = path.join(config.logFile.directory, type);
+        if (!fs.existsSync(typeDir)) {
+            fs.mkdirSync(typeDir, { recursive: true });
+        }
+    });
+    
+    // Create current date directories for all log types
+    const now = moment();
+    const year = now.format('YYYY');
+    const month = now.format('MM');
+    
+    logTypes.forEach(type => {
+        const logPath = path.join(config.logFile.directory, type, year, month);
+        if (!fs.existsSync(logPath)) {
+            fs.mkdirSync(logPath, { recursive: true });
+        }
+    });
+}
+
+// Custom transport that creates directories dynamically
+class DynamicFileTransport extends winston.transports.File {
+    constructor(options) {
+        super(options);
+        this.logType = options.logType;
+    }
+    
+    log(info, callback) {
+        // Ensure directories exist before logging
+        ensureLogDirectories();
+        
+        // Update filename to current date
+        const now = moment();
+        const year = now.format('YYYY');
+        const month = now.format('MM');
+        const day = now.format('DD');
+        const logPath = path.join(config.logFile.directory, this.logType, year, month);
+        const filename = path.join(logPath, `${day}.log`);
+        
+        // Update the transport's filename
+        this.filename = filename;
+        
+        // Call parent log method
+        super.log(info, callback);
+    }
+}
 
 // Create Winston logger (main logger with console output)
 const logger = winston.createLogger({
@@ -157,12 +204,13 @@ const logger = winston.createLogger({
         }),
 
         // Separate file for errors (global) - organized by year/month/day
-        new winston.transports.File({
+        new DynamicFileTransport({
             filename: createLogFilePath('errors'),
             level: 'error',
             maxsize: 10 * 1024 * 1024,
             maxFiles: 7,
-            tailable: true
+            tailable: true,
+            logType: 'errors'
         })
     ]
 });
@@ -180,11 +228,12 @@ const messageLogger = winston.createLogger({
     level: config.logLevel,
     format: logFormat,
     transports: [
-        new winston.transports.File({
+        new DynamicFileTransport({
             filename: createLogFilePath('messages'),
             maxsize: 10 * 1024 * 1024,
             maxFiles: 30,
-            tailable: true
+            tailable: true,
+            logType: 'messages'
         }),
         new FirebaseTransport({
             firebaseLogger: firebaseLogger,
@@ -199,11 +248,12 @@ const moderationLogger = winston.createLogger({
     level: config.logLevel,
     format: logFormat,
     transports: [
-        new winston.transports.File({
+        new DynamicFileTransport({
             filename: createLogFilePath('moderation'),
             maxsize: 10 * 1024 * 1024,
             maxFiles: 30,
-            tailable: true
+            tailable: true,
+            logType: 'moderation'
         }),
         new FirebaseTransport({
             firebaseLogger: firebaseLogger,
@@ -218,11 +268,12 @@ const statusLogger = winston.createLogger({
     level: config.logLevel,
     format: logFormat,
     transports: [
-        new winston.transports.File({
+        new DynamicFileTransport({
             filename: createLogFilePath('status'),
             maxsize: 10 * 1024 * 1024,
             maxFiles: 30,
-            tailable: true
+            tailable: true,
+            logType: 'status'
         }),
         new FirebaseTransport({
             firebaseLogger: firebaseLogger,
@@ -237,11 +288,12 @@ const forbiddenWordsLogger = winston.createLogger({
     level: config.logLevel,
     format: logFormat,
     transports: [
-        new winston.transports.File({
+        new DynamicFileTransport({
             filename: createLogFilePath('forbiddenWords'),
             maxsize: 10 * 1024 * 1024,
             maxFiles: 30,
-            tailable: true
+            tailable: true,
+            logType: 'forbiddenWords'
         }),
         new FirebaseTransport({
             firebaseLogger: firebaseLogger,
@@ -256,11 +308,12 @@ const errorLogger = winston.createLogger({
     level: config.logLevel,
     format: logFormat,
     transports: [
-        new winston.transports.File({
+        new DynamicFileTransport({
             filename: createLogFilePath('errors'),
             maxsize: 10 * 1024 * 1024,
             maxFiles: 30,
-            tailable: true
+            tailable: true,
+            logType: 'errors'
         }),
         new FirebaseTransport({
             firebaseLogger: firebaseLogger,
@@ -279,5 +332,7 @@ module.exports = {
     statusLogger,
     forbiddenWordsLogger,
     errorLogger,
-    firebaseLogger
+    firebaseLogger,
+    ensureLogDirectories,
+    createLogFilePath
 }; 

@@ -284,6 +284,15 @@ class FirebaseLogger {
             const deletedSizeMB = (deletedSize / (1024 * 1024)).toFixed(2);
             console.log(`✅ Nettoyage terminé: ${deletedFiles} dossiers supprimés, ${deletedSizeMB} MB libérés`);
             
+            // Recréer les dossiers de logs pour la date actuelle
+            try {
+                const { ensureLogDirectories } = require('./logger');
+                ensureLogDirectories();
+                console.log('📁 Dossiers de logs recréés après nettoyage');
+            } catch (error) {
+                console.error('❌ Erreur lors de la recréation des dossiers de logs:', error.message);
+            }
+            
         } catch (error) {
             console.error('❌ Erreur lors du nettoyage des logs locaux:', error.message);
         }

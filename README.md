@@ -248,6 +248,7 @@ Le système inclut une maintenance automatique complète :
 - **Délai de sécurité** : 5 minutes entre nettoyage et redémarrage
 - **Notification** : Log de redémarrage envoyé vers Firebase
 - **Détection d'environnement** : Windows/Linux/Raspberry Pi
+- **Recréation automatique** : Dossiers de logs recréés après nettoyage
 
 ### 📝 Gestion des Mots Interdits
 
@@ -266,6 +267,18 @@ La liste des mots interdits se modifie en éditant directement le fichier `forbi
 ```
 
 **Format :** Un mot par ligne, sans commentaires.
+
+### 🔧 Scripts Utilitaires
+
+Le projet inclut des scripts pour la maintenance des logs :
+
+```bash
+# Test de recréation des dossiers de logs
+node scripts/test-log-directories.js
+
+# Recréation forcée des dossiers de logs
+node scripts/recreate-log-directories.js
+```
 
 ### Render Dashboard
 - Go to your service in Render dashboard
@@ -350,6 +363,11 @@ LOGAWA/
 3. **Missing moderation information**
    - Ensure bot has "View Audit Log" permission
    - Check if audit logs are enabled in server settings
+
+4. **Dossiers de logs manquants après nettoyage**
+   - Les dossiers sont automatiquement recréés lors du prochain log
+   - Utiliser `node scripts/recreate-log-directories.js` pour forcer la recréation
+   - Vérifier que le processus a les permissions d'écriture
 
 ### Render Specific
 
