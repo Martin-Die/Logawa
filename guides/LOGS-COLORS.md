@@ -62,12 +62,7 @@ This guide presents all Logawa bot detections with their colors, organized by lo
 | **Info** | 🟢 Green | `#00ff00` |
 | **Debug** | 🔵 Blue | `#0099ff` |
 
-## 📊 Auto Backup
 
-| Detection | Color | Hex Code |
-|-----------|-------|----------|
-| **Backup successful** | 🟢 Green | `#00ff00` |
-| **Backup error** | 🔴 Red | `#ff0000` |
 
 ---
 

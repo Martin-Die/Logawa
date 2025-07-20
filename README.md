@@ -29,7 +29,7 @@ A comprehensive, secure, and reliable Discord bot designed to log all server act
 
 ### Logging Features
 - **Multi-Channel Logging**: Separate Discord channels for different log types (status, messages, forbidden words, moderation)
-- **Hybrid Logging**: Local file logging for performance + Firebase cloud backup for sharing
+- **Hybrid Logging**: Local file logging for performance + Firebase cloud storage for sharing
 - **Firebase Integration**: Cloud logging with Firestore database (organized by year/month/day)
 - **Optimized Sync**: Firebase upload every 30 minutes (cost optimization)
 - **Auto Cleanup**: Local logs automatically cleaned after 7 days
@@ -202,8 +202,7 @@ logs/
 ├── all.log              # Tous les logs (tous niveaux)
 ├── error.log            # Logs d'erreurs uniquement
 ├── 2024-01-15.log       # Logs du jour (format YYYY-MM-DD)
-├── backup/              # Sauvegardes manuelles
-└── archive/             # Sauvegardes compressées
+
 ```
 
 ### 🔧 Gestion des Logs (Optimisée)
@@ -215,12 +214,12 @@ Le système utilise une approche **hybride intelligente** pour optimiser les per
 - **Sync Firebase** : Toutes les 30 minutes (économie de coûts)
 - **Nettoyage hebdo** : Suppression des logs locaux après 7 jours (dimanche 2h)
 - **Redémarrage hebdo** : Maintenance système automatique (dimanche 2h05)
-- **Backup hebdo** : Remplacement complet des fichiers Firebase
+
 
 **💰 Économies réalisées :**
 - **83% de réduction** des coûts Firebase (30min vs 5min)
 - **Performance locale** optimale (pas de latence réseau)
-- **Fiabilité maximale** (backup local + cloud)
+- **Fiabilité maximale** (logs locaux + cloud)
 - **Gestion automatique** de l'espace disque
 - **Maintenance automatique** (redémarrage hebdomadaire)
 
@@ -244,7 +243,7 @@ Le système inclut une maintenance automatique complète :
 - **Upload forcé** : Avant chaque redémarrage pour sauvegarder les logs
 
 **🛡️ Sécurité du processus :**
-- **Logs sauvegardés** : Upload forcé vers Firebase avant redémarrage
+- **Logs synchronisés** : Upload forcé vers Firebase avant redémarrage
 - **Délai de sécurité** : 5 minutes entre nettoyage et redémarrage
 - **Notification** : Log de redémarrage envoyé vers Firebase
 - **Détection d'environnement** : Windows/Linux/Raspberry Pi
