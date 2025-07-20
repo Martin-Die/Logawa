@@ -65,6 +65,12 @@ class FirebaseLogger {
             this.startQueueProcessing();
             this.startCleanupProcess();
             
+            // Synchronisation immédiate au démarrage (après 5 secondes)
+            setTimeout(async () => {
+                console.log('🚀 Synchronisation initiale au démarrage...');
+                await this.syncExistingLogs();
+            }, 5000);
+            
             return true;
         } catch (error) {
             console.error('❌ Erreur lors de l\'initialisation Firebase:', error.message);
