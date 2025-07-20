@@ -151,7 +151,20 @@ class FirebaseLogger {
             day: day,
             logType: logType,
             // Chemin organisé pour Firebase (jour = nom du document)
-            collectionPath: `${logType}/${year}/${month}`
+            collectionPath: `${logType}/${year}/${month}`,
+            // S'assurer que les métadonnées ont la structure complète
+            metadata: {
+                logType: logType,
+                timestamp: now.toISOString(),
+                source: 'logawa-bot',
+                // Ajouter les champs manquants s'ils n'existent pas
+                authorId: logData.metadata?.authorId || null,
+                channelId: logData.metadata?.channelId || null,
+                content: logData.metadata?.content || null,
+                messageId: logData.metadata?.messageId || null,
+                // Conserver les autres métadonnées existantes
+                ...logData.metadata
+            }
         };
 
         this.uploadQueue.push(logEntry);
@@ -696,7 +709,7 @@ class FirebaseLogger {
                         .update(`${timestamp}_${level}_${message}_${logType}`)
                         .digest('hex');
                     
-                    // Créer l'entrée de log
+                    // Créer l'entrée de log avec la même structure que les logs en temps réel
                     const logEntry = {
                         level: level.toLowerCase(),
                         message: message,
@@ -710,7 +723,12 @@ class FirebaseLogger {
                         metadata: {
                             logType: logType,
                             timestamp: timestamp,
-                            source: 'local-sync'
+                            source: 'local-sync',
+                            // Ajouter les champs manquants pour correspondre aux logs en temps réel
+                            authorId: null,
+                            channelId: null,
+                            content: null,
+                            messageId: null
                         }
                     };
 
