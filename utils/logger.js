@@ -12,7 +12,7 @@ if (!fs.existsSync(config.logFile.directory)) {
 
 // Initialize Firebase Logger
 const firebaseLogger = new FirebaseLogger();
-console.log('🔥 FirebaseLogger créé:', firebaseLogger.getStatus());
+// Log silencieux en production pour éviter le spam au redémarrage
 
 // Custom format for readable logs
 const logFormat = winston.format.combine(
@@ -85,10 +85,9 @@ class FirebaseTransport extends winston.Transport {
     }
 
     async log(info, callback) {
-        console.log(`🔥 FirebaseTransport.log appelé pour ${this.logType}:`, info.message.substring(0, 50) + '...');
-        
+        // Log silencieux en production pour éviter le spam
         if (!this.firebaseLogger || !this.firebaseLogger.isInitialized) {
-            console.log(`❌ FirebaseTransport désactivé pour ${this.logType}`);
+            // Pas de log en production - Firebase n'est pas encore initialisé
             callback();
             return;
         }
@@ -97,8 +96,7 @@ class FirebaseTransport extends winston.Transport {
             const timestamp = moment().format('YYYY-MM-DD HH:mm:ss');
             const logEntry = `[${timestamp}] [${info.level.toUpperCase()}] ${info.message}`;
             
-            console.log(`📤 Ajout à la queue Firebase: ${this.logType}`);
-            // Add to Firebase queue
+            // Add to Firebase queue (silent in production)
             await this.firebaseLogger.queueLogUpload({
                 level: info.level,
                 message: info.message,

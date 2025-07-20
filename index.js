@@ -79,6 +79,7 @@ class LogawaLoggerBot {
             // Initialize Firebase logger
             const { firebaseLogger } = require('./utils/logger');
             await firebaseLogger.initialize();
+            logger.info('Firebase logger initialized successfully');
 
             // Log startup information
             await this.logStartupInfo();

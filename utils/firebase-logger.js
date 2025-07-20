@@ -37,8 +37,6 @@ class FirebaseLogger {
 
     async initialize() {
         try {
-            console.log('🔥 Initialisation Firebase...');
-            
             // Vérifier si le fichier de credentials existe
             const credentialsPath = path.join(process.cwd(), 'firebase-credentials.json');
             if (!fs.existsSync(credentialsPath)) {
@@ -58,8 +56,6 @@ class FirebaseLogger {
             this.db = admin.firestore();
             this.isInitialized = true;
             
-            console.log('✅ Firebase initialisé avec succès');
-            
             // Démarrer le traitement de la queue et le nettoyage
             this.startQueueProcessing();
             this.startCleanupProcess();
@@ -76,8 +72,6 @@ class FirebaseLogger {
         this.uploadInterval = setInterval(() => {
             this.processUploadQueue();
         }, 30 * 60 * 1000);
-        
-        console.log('🔄 Traitement de queue Firebase démarré (toutes les 30 minutes)');
     }
 
     startCleanupProcess() {
@@ -89,9 +83,6 @@ class FirebaseLogger {
                 this.scheduleWeeklyRestart();
             }
         }, 60 * 1000); // Vérifier toutes les minutes
-        
-        console.log('🧹 Processus de nettoyage local démarré (hebdomadaire - dimanche à 2h)');
-        console.log('🔄 Redémarrage hebdomadaire programmé (dimanche à 2h05)');
     }
 
     stopQueueProcessing() {
@@ -110,8 +101,7 @@ class FirebaseLogger {
 
     async queueLogUpload(logData) {
         if (!this.isInitialized) {
-            console.log('⚠️ Firebase non initialisé, log ignoré');
-            return;
+            return; // Silencieux en production
         }
 
         const now = new Date();
@@ -134,7 +124,7 @@ class FirebaseLogger {
         };
 
         this.uploadQueue.push(logEntry);
-        console.log(`📝 Log ajouté à la queue Firebase (${this.uploadQueue.length} en attente) - ${logType}/${year}/${month}/${day}`);
+        // Log silencieux en production pour éviter le spam
     }
 
     async processUploadQueue() {
@@ -143,7 +133,6 @@ class FirebaseLogger {
         }
 
         this.isProcessing = true;
-        console.log(`🔄 Traitement de ${this.uploadQueue.length} logs Firebase...`);
 
         try {
             const batch = this.db.batch();
@@ -216,7 +205,7 @@ class FirebaseLogger {
             );
 
             this.lastUploadTime = new Date();
-            console.log(`✅ ${processedLogs.length} logs uploadés vers Firebase (${this.uploadQueue.length} restants)`);
+            // Log silencieux en production
         } catch (error) {
             console.error('❌ Erreur lors du traitement de la queue Firebase:', error.message);
         } finally {
@@ -227,7 +216,7 @@ class FirebaseLogger {
     // Nettoyer les logs locaux (garder 7 jours)
     async cleanupLocalLogs() {
         try {
-            console.log('🧹 Début du nettoyage des logs locaux...');
+            console.log('🧹 Nettoyage hebdomadaire des logs locaux...');
             
             const logsDir = path.join(process.cwd(), 'logs');
             if (!fs.existsSync(logsDir)) {
@@ -282,13 +271,12 @@ class FirebaseLogger {
             }
 
             const deletedSizeMB = (deletedSize / (1024 * 1024)).toFixed(2);
-            console.log(`✅ Nettoyage terminé: ${deletedFiles} dossiers supprimés, ${deletedSizeMB} MB libérés`);
+            console.log(`✅ Nettoyage hebdomadaire terminé: ${deletedFiles} dossiers supprimés, ${deletedSizeMB} MB libérés`);
             
             // Recréer les dossiers de logs pour la date actuelle
             try {
                 const { ensureLogDirectories } = require('./logger');
                 ensureLogDirectories();
-                console.log('📁 Dossiers de logs recréés après nettoyage');
             } catch (error) {
                 console.error('❌ Erreur lors de la recréation des dossiers de logs:', error.message);
             }
@@ -326,7 +314,7 @@ class FirebaseLogger {
                     
                     // Attendre 30 secondes pour finaliser l'upload
                     setTimeout(() => {
-                        console.log('🔄 Redémarrage du système...');
+                        console.log('🔄 Redémarrage hebdomadaire du système...');
                         
                         // Redémarrer le processus (différent selon l'environnement)
                         if (process.platform === 'win32') {
