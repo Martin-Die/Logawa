@@ -11,6 +11,11 @@ class FirebaseLogger {
         this.uploadInterval = null;
         this.cleanupInterval = null;
         this.lastUploadTime = null;
+        
+        // Protection contre la surcharge mémoire
+        this.maxQueueSize = 10000; // Limite de 10k logs en queue
+        this.maxFileSize = 50 * 1024 * 1024; // 50MB max par fichier
+        this.maxSyncTimes = 1000; // Limite de 1000 timestamps de sync
     }
 
     // Fonction pour remplacer undefined et null par "no content"
@@ -70,11 +75,21 @@ class FirebaseLogger {
     startQueueProcessing() {
         // Traiter la queue et synchroniser les logs locaux toutes les 30 minutes (optimisation coûts)
         this.uploadInterval = setInterval(async () => {
-            // Traiter la queue des nouveaux logs
-            await this.processUploadQueue();
+            // Protection contre les conflits temporels
+            if (this.isProcessing) {
+                console.log('⏳ Synchronisation en cours, intervalle ignoré');
+                return;
+            }
             
-            // Synchroniser les logs existants en local
-            await this.syncExistingLogs();
+            try {
+                // Traiter la queue des nouveaux logs
+                await this.processUploadQueue();
+                
+                // Synchroniser les logs existants en local
+                await this.syncExistingLogs();
+            } catch (error) {
+                console.error('❌ Erreur lors de la synchronisation automatique:', error.message);
+            }
         }, 30 * 60 * 1000);
     }
 
@@ -108,6 +123,12 @@ class FirebaseLogger {
             return; // Silencieux en production
         }
 
+        // Protection contre la surcharge de queue
+        if (this.uploadQueue.length >= this.maxQueueSize) {
+            console.warn(`⚠️ Queue Firebase pleine (${this.uploadQueue.length}/${this.maxQueueSize}), log ignoré`);
+            return;
+        }
+
         const now = new Date();
         const year = now.getFullYear().toString();
         const month = (now.getMonth() + 1).toString().padStart(2, '0');
@@ -132,7 +153,11 @@ class FirebaseLogger {
     }
 
     async processUploadQueue() {
-        if (this.isProcessing || this.uploadQueue.length === 0) {
+        if (this.isProcessing) {
+            return; // Éviter les conflits de traitement
+        }
+
+        if (this.uploadQueue.length === 0) {
             return;
         }
 
@@ -141,6 +166,7 @@ class FirebaseLogger {
         try {
             const batch = this.db.batch();
             const processedLogs = [];
+            const batchSize = 500; // Optimisation: traiter par lots de 500 logs
 
             // Grouper les logs par jour et par type
             const logsByDay = {};
@@ -180,8 +206,12 @@ class FirebaseLogger {
                         existingLogs = existingDoc.data().logs || [];
                     }
                     
-                    // Ajouter les nouveaux logs
-                    const allLogs = [...existingLogs, ...dayData.logs];
+                    // Filtrer les doublons basés sur l'ID
+                    const existingIds = new Set(existingLogs.map(log => log.id));
+                    const newLogs = dayData.logs.filter(log => !existingIds.has(log.id));
+                    
+                    // Ajouter seulement les nouveaux logs
+                    const allLogs = [...existingLogs, ...newLogs];
                     
                     batch.set(docRef, this.cleanForFirestore({
                         logType: dayData.logType,
@@ -550,6 +580,7 @@ class FirebaseLogger {
 
             const logTypes = ['messages', 'moderation', 'status', 'forbiddenWords', 'errors'];
             let totalSynced = 0;
+            let filesChecked = 0;
 
             for (const logType of logTypes) {
                 const typeDir = path.join(logsDir, logType);
@@ -570,13 +601,16 @@ class FirebaseLogger {
                 // Lire le fichier de log du jour actuel
                 const logFile = path.join(dayPath, `${currentDay}.log`);
                 if (fs.existsSync(logFile)) {
+                    filesChecked++;
                     const synced = await this.syncLogFile(logFile, logType, currentYear, currentMonth, currentDay);
                     totalSynced += synced;
                 }
             }
 
             if (totalSynced > 0) {
-                console.log(`📤 Sync Firebase: ${totalSynced} logs du jour synchronisés`);
+                console.log(`📤 Sync Firebase: ${totalSynced} logs synchronisés depuis ${filesChecked} fichiers`);
+            } else if (filesChecked > 0) {
+                console.log(`📤 Sync Firebase: Aucun nouveau log à synchroniser (${filesChecked} fichiers vérifiés)`);
             }
             
         } catch (error) {
@@ -587,23 +621,59 @@ class FirebaseLogger {
     // Synchroniser un fichier de log spécifique
     async syncLogFile(logFilePath, logType, year, month, day) {
         try {
+            // Vérifier si ce fichier a déjà été synchronisé aujourd'hui (AVANT de lire le fichier)
+            const syncKey = `synced_${logType}_${year}_${month}_${day}`;
+            const lastSyncTime = this.lastSyncTimes?.[syncKey];
+            
+            // Protection contre les fichiers trop volumineux
+            const fileStats = fs.statSync(logFilePath);
+            
+            // Si le fichier n'a pas été modifié depuis la dernière sync, on skip (OPTIMISATION)
+            if (lastSyncTime && fileStats.mtime <= lastSyncTime) {
+                return 0;
+            }
+            
+            if (fileStats.size > this.maxFileSize) {
+                console.warn(`⚠️ Fichier trop volumineux: ${logFilePath} (${(fileStats.size / 1024 / 1024).toFixed(2)}MB), synchronisation ignorée`);
+                return 0;
+            }
+
+            // Une seule lecture du fichier (OPTIMISATION)
             const content = fs.readFileSync(logFilePath, 'utf8');
             const lines = content.split('\n').filter(line => line.trim());
             
             let syncedCount = 0;
             
+            // Protection contre les fichiers avec trop de lignes
+            const maxLines = 100000; // 100k lignes max
+            if (lines.length > maxLines) {
+                console.warn(`⚠️ Fichier avec trop de lignes: ${logFilePath} (${lines.length} lignes), synchronisation limitée`);
+                lines.splice(maxLines); // Garder seulement les 100k premières lignes
+            }
+            
             for (const line of lines) {
+                // Protection contre la surcharge de queue
+                if (this.uploadQueue.length >= this.maxQueueSize) {
+                    console.warn(`⚠️ Queue pleine lors de la synchronisation, arrêt`);
+                    break;
+                }
+
                 // Parser la ligne de log: [timestamp] [LEVEL] message
                 const match = line.match(/^\[([^\]]+)\] \[([^\]]+)\] (.+)$/);
                 if (match) {
                     const [, timestamp, level, message] = match;
+                    
+                    // Créer un ID unique basé sur le contenu pour éviter les doublons
+                    const contentHash = require('crypto').createHash('md5')
+                        .update(`${timestamp}_${level}_${message}_${logType}`)
+                        .digest('hex');
                     
                     // Créer l'entrée de log
                     const logEntry = {
                         level: level.toLowerCase(),
                         message: message,
                         timestamp: new Date(timestamp),
-                        id: Date.now() + Math.random().toString(36).substr(2, 9),
+                        id: contentHash, // ID unique basé sur le contenu
                         year: year,
                         month: month,
                         day: day,
@@ -616,17 +686,48 @@ class FirebaseLogger {
                         }
                     };
 
-                    // Ajouter à la queue
-                    this.uploadQueue.push(logEntry);
-                    syncedCount++;
+                    // Vérifier si ce log existe déjà dans la queue
+                    const existsInQueue = this.uploadQueue.some(existing => 
+                        existing.id === contentHash
+                    );
+                    
+                    if (!existsInQueue) {
+                        this.uploadQueue.push(logEntry);
+                        syncedCount++;
+                    }
                 }
             }
+
+            // Marquer ce fichier comme synchronisé et nettoyer les anciens timestamps
+            if (!this.lastSyncTimes) this.lastSyncTimes = {};
+            this.lastSyncTimes[syncKey] = new Date();
+            
+            // Nettoyer les anciens timestamps pour éviter la surcharge mémoire
+            this.cleanupSyncTimes();
 
             return syncedCount;
             
         } catch (error) {
             console.error(`❌ Erreur lors de la synchronisation de ${logFilePath}:`, error.message);
             return 0;
+        }
+    }
+
+    // Nettoyer les anciens timestamps de synchronisation
+    cleanupSyncTimes() {
+        if (!this.lastSyncTimes) return;
+        
+        const keys = Object.keys(this.lastSyncTimes);
+        if (keys.length > this.maxSyncTimes) {
+            // Garder seulement les 1000 plus récents
+            const sortedKeys = keys.sort((a, b) => 
+                this.lastSyncTimes[b] - this.lastSyncTimes[a]
+            );
+            
+            const keysToDelete = sortedKeys.slice(this.maxSyncTimes);
+            keysToDelete.forEach(key => delete this.lastSyncTimes[key]);
+            
+            console.log(`🧹 Nettoyage des timestamps de sync: ${keysToDelete.length} anciens supprimés`);
         }
     }
 
