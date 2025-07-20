@@ -280,21 +280,24 @@ class FirebaseLogger {
                     const monthPath = path.join(yearPath, month);
                     if (!fs.statSync(monthPath).isDirectory()) continue;
 
-                    const days = fs.readdirSync(monthPath);
-                    for (const day of days) {
-                        const dayPath = path.join(monthPath, day);
-                        if (!fs.statSync(dayPath).isDirectory()) continue;
-
-                        // Vérifier si le dossier date est plus ancien que 7 jours
-                        const folderDate = new Date(`${year}-${month}-${day}`);
-                        if (folderDate < cutoffDate) {
-                            const stats = fs.statSync(dayPath);
+                    const files = fs.readdirSync(monthPath);
+                    for (const file of files) {
+                        // Vérifier si c'est un fichier .log
+                        if (!file.endsWith('.log')) continue;
+                        
+                        const day = file.replace('.log', '');
+                        const filePath = path.join(monthPath, file);
+                        
+                        // Vérifier si le fichier date est plus ancien que 7 jours
+                        const fileDate = new Date(`${year}-${month}-${day}`);
+                        if (fileDate < cutoffDate) {
+                            const stats = fs.statSync(filePath);
                             deletedSize += stats.size;
                             
-                            fs.rmSync(dayPath, { recursive: true, force: true });
+                            fs.unlinkSync(filePath);
                             deletedFiles++;
                             
-                            console.log(`🗑️ Supprimé: ${year}/${month}/${day}`);
+                            console.log(`🗑️ Supprimé: ${year}/${month}/${day}.log`);
                         }
                     }
 
@@ -615,15 +618,8 @@ class FirebaseLogger {
                     continue;
                 }
 
-                // Vérifier si le dossier du jour existe
-                const dayPath = path.join(monthPath, currentDay);
-                if (!fs.existsSync(dayPath) || !fs.statSync(dayPath).isDirectory()) {
-                    console.log(`📂 Dossier jour ${currentDay} non trouvé pour ${logType}`);
-                    continue;
-                }
-
-                // Lire le fichier de log du jour actuel
-                const logFile = path.join(dayPath, `${currentDay}.log`);
+                // Le fichier de log est directement dans le dossier du mois
+                const logFile = path.join(monthPath, `${currentDay}.log`);
                 if (fs.existsSync(logFile)) {
                     console.log(`📄 Fichier trouvé: ${logType}/${currentYear}/${currentMonth}/${currentDay}.log`);
                     filesChecked++;
